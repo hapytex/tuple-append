@@ -6,4 +6,4 @@ module Data.Tuple.Append(TupleAddL((<++)), TupleAddR((++>))) where
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)))
 import Data.Tuple.Append.TemplateHaskell(defineTupleAppendUpto)
 
-[defineTupleAppendUpto|16|]
+[defineTupleAppendUpto|61|]
