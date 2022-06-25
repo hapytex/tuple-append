@@ -33,7 +33,7 @@ _patZZ :: Pat
 _patZZ = VarP _varZZ'
 
 _varNames :: [Name]
-_varNames = map (mkName . ('e' :) . show) [1..]
+_varNames = map (mkName . ('e' :) . show) [1 :: Int ..]
 
 _tupleVar' :: Int -> [Name] -> Type
 _tupleVar' n ns = foldl AppT (TupleT n) (map VarT (take n ns))
