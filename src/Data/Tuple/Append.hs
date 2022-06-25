@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, Safe, QuasiQuotes #-}
+{-# LANGUAGE FlexibleInstances, MagicHash, MultiParamTypeClasses, QuasiQuotes, Safe, UnboxedTuples #-}
 {-# OPTIONS_GHC -Wall -fno-warn-orphans -Werror #-}
 
 {-|

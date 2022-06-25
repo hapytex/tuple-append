@@ -21,7 +21,7 @@ import Control.Monad((<=<))
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
 
 import Language.Haskell.TH.Quote(QuasiQuoter(QuasiQuoter))
-import Language.Haskell.TH.Syntax(Body(NormalB), Clause(Clause), Dec(FunD, InstanceD), Exp(TupE, VarE), Name, Pat(TildeP, TupP, VarP), Type(AppT, ConT, TupleT, VarT), mkName)
+import Language.Haskell.TH.Syntax(Body(NormalB), Clause(Clause), Dec(FunD, InstanceD), Exp(TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Type(AppT, ConT, TupleT, UnboxedTupleT, VarT), mkName)
 
 _varZZ' :: Name
 _varZZ' = mkName "x"
@@ -38,35 +38,72 @@ _varNames = map (mkName . ('e' :) . show) [1 :: Int ..]
 _tupleVar' :: Int -> [Name] -> Type
 _tupleVar' n ns = foldl AppT (TupleT n) (map VarT (take n ns))
 
+_utupleVar' :: Int -> [Name] -> Type
+_utupleVar' n ns = foldl AppT (UnboxedTupleT n) (map VarT (take n ns))
+
 _tupleVar :: Int -> Type
 _tupleVar = (`_tupleVar'` _varNames)
 
-tupleP' :: [Name] -> Pat
-tupleP' = TildeP . TupP . map VarP
+_utupleVar :: Int -> Type
+_utupleVar = (`_utupleVar'` _varNames)
+
+_tupleP'' :: ([Pat] -> Pat) -> [Name] -> Pat
+_tupleP'' f = TildeP . f . map VarP
+
+_tupleP' :: [Name] -> Pat
+_tupleP' = _tupleP'' TupP
+
+_utupleP' :: [Name] -> Pat
+_utupleP' = _tupleP'' UnboxedTupP
 
 _tupleP :: Int -> Pat
-_tupleP = tupleP' . (`take` _varNames)
+_tupleP = _tupleP' . (`take` _varNames)
+
+_utupleP :: Int -> Pat
+_utupleP = _utupleP' . (`take` _varNames)
+
+#if MIN_VERSION_template_haskell(2,16,0)
+_tupleB' :: ([Maybe Exp] -> Exp) -> [Name] -> Body
+_tupleB' f = NormalB . f . map (Just . VarE)
+#else
+_tupleB' :: ([Exp] -> Exp) -> [Name] -> Body
+_tupleB' f = NormalB . f . map VarE
+#endif
 
 _tupleB :: [Name] -> Body
-#if MIN_VERSION_template_haskell(2,16,0)
-_tupleB = NormalB . TupE . map (Just . VarE)
-#else
-_tupleB = NormalB . TupE . map VarE
-#endif
+_tupleB = _tupleB' TupE
+
+_utupleB :: [Name] -> Body
+_utupleB = _tupleB' UnboxedTupE
+
+_simpleInstance :: Name -> Name -> Type -> Type -> Type -> [Pat] -> Body -> Dec
+_simpleInstance tc f tca tcb tcc fp fb = InstanceD Nothing [] (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) [FunD f [Clause fp fb []]]
+
+_simpleInstanceAppend :: Type -> Type -> Type -> [Pat] -> Body -> Dec
+_simpleInstanceAppend = _simpleInstance ''TupleAppend '(+++)
+
+_simpleInstanceAddL :: Type -> Type -> Type -> [Pat] -> Body -> Dec
+_simpleInstanceAddL = _simpleInstance ''TupleAddL '(<++)
+
+_simpleInstanceAddR :: Type -> Type -> Type -> [Pat] -> Body -> Dec
+_simpleInstanceAddR = _simpleInstance ''TupleAddR '(++>)
 
 -- | Define a typeclass instance for 'TupleAppend' where it appens tuples with /m/ and /n/ items with /m/ and /n/ the parameters of the function.
 tupleAppend
   :: Int  -- ^ The length /m/ of the first tuple.
   -> Int  -- ^ The length /n/ of the second tuple.
-  -> Dec  -- ^ An instance of the 'TupleAppend' typeclass that appends tuples with lengths /m/ and /n/ to a tuple with length /m+n/.
-tupleAppend m n = InstanceD Nothing [] (ConT ''TupleAppend `AppT` _tupleVar m `AppT` _tupleVar' n extras `AppT` _tupleVar (m+n)) [FunD '(+++) [Clause [ _tupleP m, tupleP' extras ] (_tupleB (take (m+n) _varNames)) []]]
+  -> [Dec]  -- ^ An list of instances for the 'TupleAppend' typeclass that appends tuples with lengths /m/ and /n/ to a tuple with length /m+n/ and this for both boxed and unboxed tuples.
+tupleAppend m n = [
+    _simpleInstanceAppend (_tupleVar m) (_tupleVar' n extras) (_tupleVar (m+n)) [ _tupleP m, _tupleP' extras ] (_tupleB (take (m+n) _varNames))
+  , _simpleInstanceAppend (_utupleVar m) (_utupleVar' n extras) (_utupleVar (m+n)) [ _utupleP m, _utupleP' extras ] (_utupleB (take (m+n) _varNames))
+  ]
   where extras = take n (drop m _varNames)
 
 -- | Define typeclass instances for 'TupleAppend' that will append any tuple of at least size two with any tuple of at least size two such that the sum is the given number.
 tupleAppendFor
   :: Int  -- ^ The given number /l/ for which typeclass instances of 'TupleAppend' will be made with /m/ and /n/ such that /l=m+n/.
   -> [Dec]  -- ^ A list of typelcass instances for the 'TupleAppend' typeclass.
-tupleAppendFor n = [tupleAppend m (n-m) | m <- [2 .. n - 2]]
+tupleAppendFor n = concat [tupleAppend m (n-m) | m <- [2 .. n - 2]]
 
 -- | Define typeclass instances for 'TupleAddL' and 'TupleAddR' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left or the right side.
 tupleAdd
