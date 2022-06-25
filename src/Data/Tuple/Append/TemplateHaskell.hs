@@ -17,14 +17,14 @@ module Data.Tuple.Append.TemplateHaskell (
   , tupleAdd, tupleAppend, tupleAppendFor
   ) where
 
-import Control.Monad((<=<), replicateM)
+import Control.Monad((<=<))
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
 
 import Language.Haskell.TH.Quote(QuasiQuoter(QuasiQuoter))
 import Language.Haskell.TH.Syntax(Body(NormalB), Clause(Clause), Dec(FunD, InstanceD), Exp(TupE, VarE), Name, Pat(TildeP, TupP, VarP), Type(AppT, ConT, TupleT, VarT), mkName)
 
 _varZZ' :: Name
-_varZZ' = mkName "zZ"
+_varZZ' = mkName "x"
 
 _varZZ :: Type
 _varZZ = VarT _varZZ'
@@ -33,7 +33,7 @@ _patZZ :: Pat
 _patZZ = VarP _varZZ'
 
 _varNames :: [Name]
-_varNames = map (mkName . ('_' :)) (replicateM 2 ['a' .. 'z'])
+_varNames = map (mkName . ('e' :) . show) [1..]
 
 _tupleVar' :: Int -> [Name] -> Type
 _tupleVar' n ns = foldl AppT (TupleT n) (map VarT (take n ns))
