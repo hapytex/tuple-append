@@ -1,7 +1,8 @@
 name:                tuple-append
 version:             0.1.0.0
--- synopsis:
--- description:
+synopsis:            A package to append items and tuples into new tuples.
+description:
+  A library that makes it more convenient to append a tuple with /m/ items and a tuple with /n/ items into a tuple with /m+n/ items, together with functions to add an element at the left, or the right side of a tuple.
 homepage:            https://github.com/hapytex/tuple-append#readme
 license:             BSD3
 license-file:        LICENSE
@@ -10,7 +11,9 @@ maintainer:          hapytexteu+gh@gmail.com
 copyright:           2022 Willem Van Onsem
 category:            utils
 build-type:          Simple
-extra-source-files:  README.md
+extra-source-files:
+    README.md
+  , CHANGELOG.md
 cabal-version:       >=1.10
 
 library
