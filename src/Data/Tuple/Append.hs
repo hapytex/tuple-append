@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, MultiParamTypeClasses, Safe, QuasiQuotes #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, Safe, QuasiQuotes #-}
 {-# OPTIONS_GHC -Wall -fno-warn-orphans -Werror #-}
 
 module Data.Tuple.Append(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++))) where

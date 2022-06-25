@@ -1,4 +1,4 @@
-{-# LANGUAGE Safe, TemplateHaskellQuotes #-}
+{-# LANGUAGE CPP, Safe, TemplateHaskellQuotes #-}
 
 module Data.Tuple.Append.TemplateHaskell (
     defineTupleAddUpto, defineTupleAppendUpto
@@ -36,7 +36,11 @@ _tupleP :: Int -> Pat
 _tupleP = tupleP' . (`take` _varNames)
 
 _tupleB :: [Name] -> Body
+#if MIN_VERSION_template_haskell(2,16,0)
 _tupleB = NormalB . TupE . map (Just . VarE)
+#else
+_tupleB = NormalB . TupE . map VarE
+#endif
 
 tupleAppend :: Int -> Int -> Dec
 tupleAppend n m = InstanceD Nothing [] (ConT ''TupleAppend `AppT` _tupleVar n `AppT` _tupleVar' m extras `AppT` _tupleVar (n+m)) [FunD '(+++) [Clause [ _tupleP n, tupleP' extras ] (_tupleB (take (n+m) _varNames)) []]]
