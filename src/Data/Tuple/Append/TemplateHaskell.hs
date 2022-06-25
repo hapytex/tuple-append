@@ -57,8 +57,11 @@ tupleAdd n = [
   where varN = _varZZ' : take n _varNames
         varN' = take n _varNames ++ [_varZZ']
 
+_errorQuasiQuoter :: a
+_errorQuasiQuoter = error "The quasi quoter can only be used to define declarations"
+
 defineTupleAddUpto :: QuasiQuoter
-defineTupleAddUpto = QuasiQuoter undefined undefined undefined (return . (tupleAdd <=< enumFromTo 2 . read))
+defineTupleAddUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (return . (tupleAdd <=< enumFromTo 2 . read))
 
 defineTupleAppendUpto :: QuasiQuoter
-defineTupleAppendUpto = QuasiQuoter undefined undefined undefined (return . (tupleAppendFor <=< enumFromTo 2 . read))
+defineTupleAppendUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (return . (tupleAppendFor <=< enumFromTo 2 . read))
