@@ -5,7 +5,7 @@ module Data.Tuple.Append.TemplateHaskell (
   , tupleAdd, tupleAppend, tupleAppendFor
   ) where
 
-import Control.Monad(replicateM)
+import Control.Monad((<=<), replicateM)
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
 
 import Language.Haskell.TH.Quote(QuasiQuoter(QuasiQuoter))
@@ -51,14 +51,14 @@ tupleAppendFor n = [tupleAppend m (n-m) | m <- [2 .. n - 2]]
 
 tupleAdd :: Int -> [Dec]
 tupleAdd n = [
-    InstanceD Nothing [] (ConT ''TupleAddL `AppT` _varZZ `AppT` _tupleVar n `AppT` (_tupleVar' (n+1) varN)) [FunD '(<++) [Clause [ _patZZ, _tupleP n ] (_tupleB varN) []]]
-  , InstanceD Nothing [] (ConT ''TupleAddR `AppT` _varZZ `AppT` _tupleVar n `AppT` (_tupleVar' (n+1) varN')) [FunD '(++>) [Clause [ _tupleP n, _patZZ ] (_tupleB varN') []]]
+    InstanceD Nothing [] (ConT ''TupleAddL `AppT` _varZZ `AppT` _tupleVar n `AppT` _tupleVar' (n+1) varN) [FunD '(<++) [Clause [ _patZZ, _tupleP n ] (_tupleB varN) []]]
+  , InstanceD Nothing [] (ConT ''TupleAddR `AppT` _varZZ `AppT` _tupleVar n `AppT` _tupleVar' (n+1) varN') [FunD '(++>) [Clause [ _tupleP n, _patZZ ] (_tupleB varN') []]]
   ]
   where varN = _varZZ' : take n _varNames
         varN' = take n _varNames ++ [_varZZ']
 
 defineTupleAddUpto :: QuasiQuoter
-defineTupleAddUpto = QuasiQuoter undefined undefined undefined (return . (tupleAdd =<<) . enumFromTo 2 . read)
+defineTupleAddUpto = QuasiQuoter undefined undefined undefined (return . (tupleAdd <=< enumFromTo 2 . read))
 
 defineTupleAppendUpto :: QuasiQuoter
-defineTupleAppendUpto = QuasiQuoter undefined undefined undefined (return . (tupleAppendFor =<<) . enumFromTo 2 . read)
+defineTupleAppendUpto = QuasiQuoter undefined undefined undefined (return . (tupleAppendFor <=< enumFromTo 2 . read))

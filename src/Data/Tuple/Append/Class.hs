@@ -1,4 +1,4 @@
-{-# LANGUAGE FunctionalDependencies, MultiParamTypeClasses, Safe #-}
+{-# LANGUAGE FunctionalDependencies, Safe #-}
 
 module Data.Tuple.Append.Class where
 
