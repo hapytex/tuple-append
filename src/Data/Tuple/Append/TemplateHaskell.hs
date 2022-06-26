@@ -44,17 +44,20 @@ _varZZ = VarT _varZZ'
 _patZZ :: Pat
 _patZZ = VarP _varZZ'
 
-_varNames :: [Name]
-_varNames = map (mkName . ('e' :) . map (chr . (8272 +) . ord) . show) [1 :: Int ..]
+_varNames :: Char -> [Name]
+_varNames c = map (mkName . (c :) . map (chr . (8272 +) . ord) . show) [1 :: Int ..]
+
+_uNames :: [Name]
+_uNames = _varNames 'u'
+
+_vNames :: [Name]
+_vNames = _varNames 'v'
 
 _tupleVar' :: Int -> [Name] -> Type
 _tupleVar' n ns = foldl AppT (TupleT n) (map VarT (take n ns))
 
 _utupleVar' :: Int -> [Name] -> Type
 _utupleVar' n ns = foldl AppT (UnboxedTupleT n) (map VarT (take n ns))
-
-_tupleVar :: Int -> Type
-_tupleVar = (`_tupleVar'` _varNames)
 
 _tupleP'' :: ([Pat] -> Pat) -> [Name] -> Pat
 _tupleP'' f = TildeP . f . map VarP
@@ -64,12 +67,6 @@ _tupleP' = _tupleP'' TupP
 
 _utupleP' :: [Name] -> Pat
 _utupleP' = _tupleP'' UnboxedTupP
-
-_tupleP :: Int -> Pat
-_tupleP = _tupleP' . (`take` _varNames)
-
-_utupleP :: Int -> Pat
-_utupleP = _utupleP' . (`take` _varNames)
 
 #if MIN_VERSION_template_haskell(2,16,0)
 _tupleB' :: ([Maybe Exp] -> Exp) -> [Name] -> Body
@@ -87,7 +84,9 @@ _appendClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Int -> Name ->
 #else
 _appendClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Int -> Name -> Dec
 #endif
-_appendClause fp fe m n = _clause [ _tupleP'' fp (take m _varNames), _tupleP'' fp (take n (drop m _varNames))] (_tupleB' fe (take (m+n) _varNames))
+_appendClause fp fe m n = _clause [ _tupleP'' fp um, _tupleP'' fp vn] (_tupleB' fe (um ++ vn))
+  where um = take m _uNames
+        vn = take n _vNames
 
 #if MIN_VERSION_template_haskell(2,16,0)
 _addLClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
@@ -95,7 +94,7 @@ _addLClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
 _addLClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Name -> Dec
 #endif
 _addLClause fp fe n = _clause [ _patZZ, _tupleP'' fp vars] (_tupleB' fe (_varZZ' : vars))
-  where vars = take n _varNames
+  where vars = take n _vNames
 
 #if MIN_VERSION_template_haskell(2,16,0)
 _addRClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
@@ -103,7 +102,7 @@ _addRClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
 _addRClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Name -> Dec
 #endif
 _addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++> _varZZ'))
-  where vars = take n _varNames
+  where vars = take n _vNames
 
 -- | Create a function declaration to append two boxed tuples together in a new boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
 boxedAppendClause
@@ -250,7 +249,7 @@ tupleAppend
   :: Int  -- ^ The length /m/ of the first tuple.
   -> Int  -- ^ The length /n/ of the second tuple.
   -> Dec  -- ^ An instance of the 'TupleAppend' typeclass that appends tuples with lengths /m/ and /n/ to a tuple with length /m+n/.
-tupleAppend m n = _simpleInstanceAppend (_tupleVar m) (_tupleVar' n (drop m _varNames)) (_tupleVar (m+n)) (boxedAppendClause m n)
+tupleAppend m n = _simpleInstanceAppend (_tupleVar' m _uNames) (_tupleVar' n _vNames) (_tupleVar' (m+n) (take m _uNames ++ _vNames)) (boxedAppendClause m n)
 
 -- | Define typeclass instances for 'TupleAppend' that will append any tuple of at least size two with any tuple of at least size two such that the sum is the given number.
 tupleAppendFor
@@ -263,8 +262,8 @@ tupleAdd
   :: Int  -- ^ The given length /n/ of the tuples to prepend and append with an element.
   -> [Dec]  -- ^ A list of two type instance declarations that contains typeclass instances for 'TupleAddL' and 'TupleAddR'.
 tupleAdd n = [
-    _simpleInstanceAddL _varZZ (_tupleVar n) (_tupleVar' (n+1) (_varZZ' : _varNames)) (boxedAddLClause n)
-  , _simpleInstanceAddR _varZZ (_tupleVar n) (_tupleVar' (n+1) (take n _varNames ++> _varZZ')) (boxedAddRClause n)
+    _simpleInstanceAddL _varZZ (_tupleVar' n _vNames) (_tupleVar' (n+1) (_varZZ' : _vNames)) (boxedAddLClause n)
+  , _simpleInstanceAddR _varZZ (_tupleVar' n _vNames) (_tupleVar' (n+1) (take n _vNames ++> _varZZ')) (boxedAddRClause n)
   ]
 
 _errorQuasiQuoter :: a -> Q b
