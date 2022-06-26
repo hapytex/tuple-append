@@ -15,6 +15,14 @@ module Data.Tuple.Append.TemplateHaskell (
     defineTupleAddUpto, defineTupleAppendUpto
     -- * Functions to construct typeclass instance declarations
   , tupleAdd, tupleAppend, tupleAppendFor
+    -- * Function declarations
+  , boxedTupleAddLFun, boxedTupleAddRFun, boxedTupleAppendFun
+  , unboxedTupleAddLFun, unboxedTupleAddRFun, unboxedTupleAppendFun
+    -- * Create a function clause
+    -- ** Boxed tuples
+  , boxedAddLClause, boxedAddRClause, boxedAppendClause
+    -- ** Unboxed tuples
+  , unboxedAddLClause, unboxedAddRClause, unboxedAppendClause
   ) where
 
 import Control.Monad((<=<))
@@ -23,7 +31,9 @@ import Data.Char(chr, ord)
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
 
 import Language.Haskell.TH.Quote(QuasiQuoter(QuasiQuoter))
-import Language.Haskell.TH.Syntax(Body(NormalB), Clause(Clause), Dec(FunD, InstanceD, SigD), Exp(TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Type(AppT, ArrowT, ConT, TupleT, UnboxedTupleT, VarT), mkName)
+import Language.Haskell.TH.Syntax(
+    Body(NormalB), Clause(Clause), Dec(FunD, InstanceD, SigD), Exp(TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Q, Type(AppT, ArrowT, ConT, TupleT, UnboxedTupleT, VarT), mkName
+  )
 
 _varZZ' :: Name
 _varZZ' = mkName "x"
@@ -125,20 +135,44 @@ _arr l r = ArrowT `AppT` l `AppT` r
 _tupType :: [Type] -> Type
 _tupType ns = foldl AppT (TupleT (length ns)) ns
 
-tupleAppendFun :: Name -> [Type] -> [Type] -> [Dec]
-tupleAppendFun nm l r = [
-    SigD nm (_tupType l `_arr` (_tupType r `_arr` _tupType (l ++ r)))
+_signature :: Name -> Type -> Type -> Type -> Dec
+_signature nm ta tb tc = SigD nm (ta `_arr` (tb `_arr` tc))
+
+boxedTupleAppendFun :: Name -> [Type] -> [Type] -> [Dec]
+boxedTupleAppendFun nm l r = [
+    _signature nm (_tupType l) (_tupType r) (_tupType (l ++ r))
   , boxedAppendClause (length l) (length r) nm
   ]
 
 unboxedTupleAppendFun :: Name -> [Type] -> [Type] -> [Dec]
 unboxedTupleAppendFun nm l r = [
-    SigD nm (_arr tl (_arr tr tlr))  -- TODO: unboxed type
+    _signature nm (_tupType l) (_tupType r) (_tupType (l ++ r))  -- TODO: unboxed types
   , unboxedAppendClause (length l) (length r) nm
   ]
-  where tl = _tupType l
-        tr = _tupType r
-        tlr = _tupType (l ++ r)
+
+boxedTupleAddLFun :: Name -> Type -> [Type] -> [Dec]
+boxedTupleAddLFun nm t ts = [
+    _signature nm t (_tupType ts) (_tupType (t : ts))
+  , boxedAddLClause (length ts) nm
+  ]
+
+unboxedTupleAddLFun :: Name -> Type -> [Type] -> [Dec]
+unboxedTupleAddLFun nm t ts = [
+    _signature nm t (_tupType ts) (_tupType (t : ts))  -- TODO: unboxed types
+  , unboxedAddLClause (length ts) nm
+  ]
+
+boxedTupleAddRFun :: Name -> [Type] -> Type -> [Dec]
+boxedTupleAddRFun nm ts t = [
+    _signature nm (_tupType ts) t (_tupType (ts ++> t))
+  , boxedAddRClause (length ts) nm
+  ]
+
+unboxedTupleAddRFun :: Name -> [Type] -> Type -> [Dec]
+unboxedTupleAddRFun nm ts t = [
+    _signature nm (_tupType ts) t (_tupType (ts ++> t))  -- TODO: unboxed types
+  , unboxedAddRClause (length ts) nm
+  ]
 
 _simpleInstance :: Name -> Name -> Type -> Type -> Type -> (Name -> Dec) -> Dec
 _simpleInstance tc f tca tcb tcc d = InstanceD Nothing [] (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) [d f]
@@ -170,14 +204,12 @@ tupleAdd
   :: Int  -- ^ The given length /n/ of the tuples to prepend and append with an element.
   -> [Dec]  -- ^ A list of two type instance declarations that contains typeclass instances for 'TupleAddL' and 'TupleAddR'.
 tupleAdd n = [
-    InstanceD Nothing [] (ConT ''TupleAddL `AppT` _varZZ `AppT` _tupleVar n `AppT` _tupleVar' (n+1) varN) [FunD '(<++) [Clause [ _patZZ, _tupleP n ] (_tupleB varN) []]]
-  , InstanceD Nothing [] (ConT ''TupleAddR `AppT` _varZZ `AppT` _tupleVar n `AppT` _tupleVar' (n+1) varN') [FunD '(++>) [Clause [ _tupleP n, _patZZ ] (_tupleB varN') []]]
+    _simpleInstanceAddL _varZZ (_tupleVar n) (_tupleVar' (n+1) (_varZZ' : _varNames)) (boxedAddLClause n)
+  , _simpleInstanceAddR _varZZ (_tupleVar n) (_tupleVar' (n+1) (take n _varNames ++ [_varZZ'])) (boxedAddRClause n)
   ]
-  where varN = _varZZ' : take n _varNames
-        varN' = take n _varNames ++ [_varZZ']
 
-_errorQuasiQuoter :: a
-_errorQuasiQuoter = error "The quasi quoter can only be used to define declarations"
+_errorQuasiQuoter :: a -> Q b
+_errorQuasiQuoter = const (fail "The quasi quoter can only be used to define declarations")
 
 -- | A 'QuasiQuoter' that constructs instances for 'TupleAddL' and 'TupleAddR' for tuples up to length /n/ where /n/ is read as text input for the quasi quoter.
 defineTupleAddUpto

@@ -11,7 +11,12 @@ Portability : POSIX
 A module that contains typeclasses to prepend and append items and tuples into new tuples together with the corresponding instances.
 -}
 
-module Data.Tuple.Append(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++))) where
+module Data.Tuple.Append(
+    -- * Add an element to a tuple
+    TupleAddL((<++)), TupleAddR((++>))
+    -- * Append two tuples
+  , TupleAppend((+++))
+  ) where
 
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
 import Data.Tuple.Append.TemplateHaskell(defineTupleAddUpto, defineTupleAppendUpto)
