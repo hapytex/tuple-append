@@ -102,25 +102,51 @@ _addRClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
 #else
 _addRClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Name -> Dec
 #endif
-_addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++ [_varZZ']))
+_addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++> _varZZ'))
   where vars = take n _varNames
 
-boxedAppendClause :: Int -> Int -> Name -> Dec
+-- | Create a function declaration to append two boxed tuples together in a new boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+boxedAppendClause
+  :: Int  -- ^ The number of items for the first boxed tuple parameter.
+  -> Int  -- ^ The number of items for the second boxed tuple parameter.
+  -> Name  -- ^ The name of the function to define.
+  -> Dec  -- ^ A function declaration that only contains the body of the function.
 boxedAppendClause = _appendClause TupP TupE
 
-unboxedAppendClause :: Int -> Int -> Name -> Dec
+-- | Create a function declaration to append two unboxed tuples together in a new unboxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+unboxedAppendClause
+  :: Int  -- ^ The number of items for the first unboxed tuple parameter.
+  -> Int  -- ^ The number of items for the second unboxed tuple parameter.
+  -> Name  -- ^ The name of the function to define.
+  -> Dec  -- ^ A function declaration that only contains the body of the function.
 unboxedAppendClause = _appendClause UnboxedTupP UnboxedTupE
 
-boxedAddLClause :: Int -> Name -> Dec
+-- | Create a function declaration to add an item to the left side of a boxed tuple in a new boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+boxedAddLClause
+  :: Int  -- The number of items of the boxed tuple to add an item to.
+  -> Name  -- ^ The name of the function to define.
+  -> Dec  -- ^ A function declaration that only contains the body of the function.
 boxedAddLClause = _addLClause TupP TupE
 
-unboxedAddLClause :: Int -> Name -> Dec
+-- | Create a function declaration to add an item to the left side of an unboxed tuple in a new unboxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+unboxedAddLClause
+  :: Int  -- The number of items of the unboxed tuple to add an item to.
+  -> Name  -- ^ The name of the function to define.
+  -> Dec  -- ^ A function declaration that only contains the body of the function.
 unboxedAddLClause = _addLClause UnboxedTupP UnboxedTupE
 
-boxedAddRClause :: Int -> Name -> Dec
+-- | Create a function declaration to add an item to the right side of a boxed tuple in a new boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+boxedAddRClause
+  :: Int  -- The number of items of the boxed tuple to add an item to.
+  -> Name  -- ^ The name of the function to define.
+  -> Dec  -- ^ A function declaration that only contains the body of the function.
 boxedAddRClause = _addRClause TupP TupE
 
-unboxedAddRClause :: Int -> Name -> Dec
+-- | Create a function declaration to add an item to the right side of an unboxed tuple in a new unboxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+unboxedAddRClause
+  :: Int  -- The number of items of the unboxed tuple to add an item to.
+  -> Name  -- ^ The name of the function to define.
+  -> Dec  -- ^ A function declaration that only contains the body of the function.
 unboxedAddRClause = _addRClause UnboxedTupP UnboxedTupE
 
 _tupleB :: [Name] -> Body
@@ -135,42 +161,75 @@ _arr l r = ArrowT `AppT` l `AppT` r
 _tupType :: [Type] -> Type
 _tupType ns = foldl AppT (TupleT (length ns)) ns
 
+_utupType :: [Type] -> Type
+_utupType ns = foldl AppT (UnboxedTupleT (length ns)) ns
+
 _signature :: Name -> Type -> Type -> Type -> Dec
 _signature nm ta tb tc = SigD nm (ta `_arr` (tb `_arr` tc))
 
-boxedTupleAppendFun :: Name -> [Type] -> [Type] -> [Dec]
+-- | Create a function declaration with signature to append a boxed tuple with the types of the first list with a boxed tuple with the types of the second list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+boxedTupleAppendFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements.
+  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements.
+  -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 boxedTupleAppendFun nm l r = [
     _signature nm (_tupType l) (_tupType r) (_tupType (l ++ r))
   , boxedAppendClause (length l) (length r) nm
   ]
 
-unboxedTupleAppendFun :: Name -> [Type] -> [Type] -> [Dec]
+-- | Create a function declaration with signature to append an unboxed tuple with the types of the first list with an unboxed tuple with the types of the second list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+unboxedTupleAppendFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 unboxedTupleAppendFun nm l r = [
-    _signature nm (_tupType l) (_tupType r) (_tupType (l ++ r))  -- TODO: unboxed types
+    _signature nm (_utupType l) (_utupType r) (_utupType (l ++ r))
   , unboxedAppendClause (length l) (length r) nm
   ]
 
-boxedTupleAddLFun :: Name -> Type -> [Type] -> [Dec]
+-- | Create a function declaration with signature to add an item with a given type to the left side of a boxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+boxedTupleAddLFun
+  :: Name  -- ^ The name of the function to construct.
+  -> Type  -- ^ The type of the item to add to the tuple.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements.
+  -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 boxedTupleAddLFun nm t ts = [
     _signature nm t (_tupType ts) (_tupType (t : ts))
   , boxedAddLClause (length ts) nm
   ]
 
-unboxedTupleAddLFun :: Name -> Type -> [Type] -> [Dec]
+-- | Create a function declaration with signature to add an item with a given type to the left side of an unboxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+unboxedTupleAddLFun
+  :: Name  -- ^ The name of the function to construct.
+  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 unboxedTupleAddLFun nm t ts = [
-    _signature nm t (_tupType ts) (_tupType (t : ts))  -- TODO: unboxed types
+    _signature nm t (_utupType ts) (_utupType (t : ts))
   , unboxedAddLClause (length ts) nm
   ]
 
-boxedTupleAddRFun :: Name -> [Type] -> Type -> [Dec]
+-- | Create a function declaration with signature to add an item with a given type to the right side of a boxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+boxedTupleAddRFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements.
+  -> Type  -- ^ The type of the item to add to the tuple.
+  -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 boxedTupleAddRFun nm ts t = [
     _signature nm (_tupType ts) t (_tupType (ts ++> t))
   , boxedAddRClause (length ts) nm
   ]
 
-unboxedTupleAddRFun :: Name -> [Type] -> Type -> [Dec]
+-- | Create a function declaration with signature to add an item with a given type to the right side of an unboxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+unboxedTupleAddRFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
+  -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 unboxedTupleAddRFun nm ts t = [
-    _signature nm (_tupType ts) t (_tupType (ts ++> t))  -- TODO: unboxed types
+    _signature nm (_utupType ts) t (_utupType (ts ++> t))
   , unboxedAddRClause (length ts) nm
   ]
 
@@ -205,7 +264,7 @@ tupleAdd
   -> [Dec]  -- ^ A list of two type instance declarations that contains typeclass instances for 'TupleAddL' and 'TupleAddR'.
 tupleAdd n = [
     _simpleInstanceAddL _varZZ (_tupleVar n) (_tupleVar' (n+1) (_varZZ' : _varNames)) (boxedAddLClause n)
-  , _simpleInstanceAddR _varZZ (_tupleVar n) (_tupleVar' (n+1) (take n _varNames ++ [_varZZ'])) (boxedAddRClause n)
+  , _simpleInstanceAddR _varZZ (_tupleVar n) (_tupleVar' (n+1) (take n _varNames ++> _varZZ')) (boxedAddRClause n)
   ]
 
 _errorQuasiQuoter :: a -> Q b
