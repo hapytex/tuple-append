@@ -69,18 +69,49 @@ _tupleB' :: ([Exp] -> Exp) -> [Name] -> Body
 _tupleB' f = NormalB . f . map VarE
 #endif
 
-#if MIN_VERSION_template_haskell(2,16,0)
-_appendClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Int -> Clause
-#else
-_appendClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Int -> Clause
-#endif
-_appendClause fp fe m n = Clause [ _tupleP'' fp (take m _varNames), _tupleP'' fp (take n (drop m _varNames)) ] (_tupleB' fe (take (m+n) _varNames)) []
+_clause :: [Pat] -> Body -> Name -> Dec
+_clause ps b = (`FunD` [Clause ps b []])
 
-boxedAppendClause :: Int -> Int -> Clause
+#if MIN_VERSION_template_haskell(2,16,0)
+_appendClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Int -> Name -> Dec
+#else
+_appendClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Int -> Name -> Dec
+#endif
+_appendClause fp fe m n = _clause [ _tupleP'' fp (take m _varNames), _tupleP'' fp (take n (drop m _varNames))] (_tupleB' fe (take (m+n) _varNames))
+
+#if MIN_VERSION_template_haskell(2,16,0)
+_addLClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
+#else
+_addLClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Name -> Dec
+#endif
+_addLClause fp fe n = _clause [ _patZZ, _tupleP'' fp vars] (_tupleB' fe (_varZZ' : vars))
+  where vars = take n _varNames
+
+#if MIN_VERSION_template_haskell(2,16,0)
+_addRClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
+#else
+_addRClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Name -> Dec
+#endif
+_addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++ [_varZZ']))
+  where vars = take n _varNames
+
+boxedAppendClause :: Int -> Int -> Name -> Dec
 boxedAppendClause = _appendClause TupP TupE
 
-unboxedAppendClause :: Int -> Int -> Clause
+unboxedAppendClause :: Int -> Int -> Name -> Dec
 unboxedAppendClause = _appendClause UnboxedTupP UnboxedTupE
+
+boxedAddLClause :: Int -> Name -> Dec
+boxedAddLClause = _addLClause TupP TupE
+
+unboxedAddLClause :: Int -> Name -> Dec
+unboxedAddLClause = _addLClause UnboxedTupP UnboxedTupE
+
+boxedAddRClause :: Int -> Name -> Dec
+boxedAddRClause = _addRClause TupP TupE
+
+unboxedAddRClause :: Int -> Name -> Dec
+unboxedAddRClause = _addRClause UnboxedTupP UnboxedTupE
 
 _tupleB :: [Name] -> Body
 _tupleB = _tupleB' TupE
@@ -96,32 +127,29 @@ _tupType ns = foldl AppT (TupleT (length ns)) ns
 
 tupleAppendFun :: Name -> [Type] -> [Type] -> [Dec]
 tupleAppendFun nm l r = [
-    SigD nm (_arr tl (_arr tr tlr))
-  , FunD nm [boxedAppendClause (length l) (length r)]
+    SigD nm (_tupType l `_arr` (_tupType r `_arr` _tupType (l ++ r)))
+  , boxedAppendClause (length l) (length r) nm
   ]
-  where tl = _tupType l
-        tr = _tupType r
-        tlr = _tupType (l ++ r)
 
 unboxedTupleAppendFun :: Name -> [Type] -> [Type] -> [Dec]
 unboxedTupleAppendFun nm l r = [
     SigD nm (_arr tl (_arr tr tlr))  -- TODO: unboxed type
-  , FunD nm [unboxedAppendClause (length l) (length r)]
+  , unboxedAppendClause (length l) (length r) nm
   ]
   where tl = _tupType l
         tr = _tupType r
         tlr = _tupType (l ++ r)
 
-_simpleInstance :: Name -> Name -> Type -> Type -> Type -> [Pat] -> Body -> Dec
-_simpleInstance tc f tca tcb tcc fp fb = InstanceD Nothing [] (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) [FunD f [Clause fp fb []]]
+_simpleInstance :: Name -> Name -> Type -> Type -> Type -> (Name -> Dec) -> Dec
+_simpleInstance tc f tca tcb tcc d = InstanceD Nothing [] (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) [d f]
 
-_simpleInstanceAppend :: Type -> Type -> Type -> [Pat] -> Body -> Dec
+_simpleInstanceAppend :: Type -> Type -> Type -> (Name -> Dec) -> Dec
 _simpleInstanceAppend = _simpleInstance ''TupleAppend '(+++)
 
-_simpleInstanceAddL :: Type -> Type -> Type -> [Pat] -> Body -> Dec
+_simpleInstanceAddL :: Type -> Type -> Type -> (Name -> Dec) -> Dec
 _simpleInstanceAddL = _simpleInstance ''TupleAddL '(<++)
 
-_simpleInstanceAddR :: Type -> Type -> Type -> [Pat] -> Body -> Dec
+_simpleInstanceAddR :: Type -> Type -> Type -> (Name -> Dec) -> Dec
 _simpleInstanceAddR = _simpleInstance ''TupleAddR '(++>)
 
 -- | Define a typeclass instance for 'TupleAppend' where it appens tuples with /m/ and /n/ items with /m/ and /n/ the parameters of the function.
@@ -129,8 +157,7 @@ tupleAppend
   :: Int  -- ^ The length /m/ of the first tuple.
   -> Int  -- ^ The length /n/ of the second tuple.
   -> Dec  -- ^ An instance of the 'TupleAppend' typeclass that appends tuples with lengths /m/ and /n/ to a tuple with length /m+n/.
-tupleAppend m n = _simpleInstanceAppend (_tupleVar m) (_tupleVar' n extras) (_tupleVar (m+n)) [ _tupleP m, _tupleP' extras ] (_tupleB (take (m+n) _varNames))
-  where extras = take n (drop m _varNames)
+tupleAppend m n = _simpleInstanceAppend (_tupleVar m) (_tupleVar' n (drop m _varNames)) (_tupleVar (m+n)) (boxedAppendClause m n)
 
 -- | Define typeclass instances for 'TupleAppend' that will append any tuple of at least size two with any tuple of at least size two such that the sum is the given number.
 tupleAppendFor
