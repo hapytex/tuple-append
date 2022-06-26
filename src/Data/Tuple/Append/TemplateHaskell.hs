@@ -236,9 +236,7 @@ unboxedTupleAddRFun nm ts t = [
   , unboxedAddRClause (length ts) nm
   ]
 
--- TODO
-
--- | Create a function declaration with signature to append a boxed tuple with the types of the first list with a boxed tuple with the types of the second list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+-- | Create a function declaration with signature to append a boxed tuple with the types of the first list with a boxed tuple with the types of the second list. This function can be used with template Haskell.
 makeBoxedTupleAppendFun
   :: Name  -- ^ The name of the function to construct.
   -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements.
@@ -246,7 +244,7 @@ makeBoxedTupleAppendFun
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to append the tuples.
 makeBoxedTupleAppendFun nm l = pure . boxedTupleAppendFun nm l
 
--- | Create a function declaration with signature to append an unboxed tuple with the types of the first list with an unboxed tuple with the types of the second list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+-- | Create a function declaration with signature to append an unboxed tuple with the types of the first list with an unboxed tuple with the types of the second list. This function can be used with template Haskell.
 makeUnboxedTupleAppendFun
   :: Name  -- ^ The name of the function to construct.
   -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements, all types should be unlifted types.
@@ -254,7 +252,7 @@ makeUnboxedTupleAppendFun
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to append the tuples.
 makeUnboxedTupleAppendFun nm l = pure . unboxedTupleAppendFun nm l
 
--- | Create a function declaration with signature to add an item with a given type to the left side of a boxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+-- | Create a function declaration with signature to add an item with a given type to the left side of a boxed tuple with the types of the given list. This function can be used with template Haskell.
 makeBoxedTupleAddLFun
   :: Name  -- ^ The name of the function to construct.
   -> Type  -- ^ The type of the item to add to the tuple.
@@ -262,7 +260,7 @@ makeBoxedTupleAddLFun
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the left side of a tuple.
 makeBoxedTupleAddLFun nm t = pure . boxedTupleAddLFun nm t
 
--- | Create a function declaration with signature to add an item with a given type to the left side of an unboxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+-- | Create a function declaration with signature to add an item with a given type to the left side of an unboxed tuple with the types of the given list. This function can be used with template Haskell.
 makeUnboxedTupleAddLFun
   :: Name  -- ^ The name of the function to construct.
   -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
@@ -270,7 +268,7 @@ makeUnboxedTupleAddLFun
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the left side of a tuple.
 makeUnboxedTupleAddLFun nm t = pure . unboxedTupleAddLFun nm t
 
--- | Create a function declaration with signature to add an item with a given type to the right side of a boxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+-- | Create a function declaration with signature to add an item with a given type to the right side of a boxed tuple with the types of the given list. This function can be used with template Haskell.
 makeBoxedTupleAddRFun
   :: Name  -- ^ The name of the function to construct.
   -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements.
@@ -278,7 +276,7 @@ makeBoxedTupleAddRFun
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the right side of a tuple.
 makeBoxedTupleAddRFun nm ts = pure . boxedTupleAddRFun nm ts
 
--- | Create a function declaration with signature to add an item with a given type to the right side of an unboxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
+-- | Create a function declaration with signature to add an item with a given type to the right side of an unboxed tuple with the types of the given list. This function can be used with template Haskell.
 makeUnboxedTupleAddRFun
   :: Name  -- ^ The name of the function to construct.
   -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
