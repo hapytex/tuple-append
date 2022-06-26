@@ -263,7 +263,7 @@ tupleAdd
   -> [Dec]  -- ^ A list of two type instance declarations that contains typeclass instances for 'TupleAddL' and 'TupleAddR'.
 tupleAdd n = [
     _simpleInstanceAddL _varZZ (_tupleVar' n _vNames) (_tupleVar' (n+1) (_varZZ' : _vNames)) (boxedAddLClause n)
-  , _simpleInstanceAddR _varZZ (_tupleVar' n _vNames) (_tupleVar' (n+1) (take n _vNames ++> _varZZ')) (boxedAddRClause n)
+  , _simpleInstanceAddR (_tupleVar' n _vNames) _varZZ (_tupleVar' (n+1) (take n _vNames ++> _varZZ')) (boxedAddRClause n)
   ]
 
 _errorQuasiQuoter :: a -> Q b

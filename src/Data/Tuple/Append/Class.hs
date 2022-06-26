@@ -29,7 +29,7 @@ class TupleAddL x 𝐯 x𝐯 | x 𝐯 -> x𝐯, x x𝐯 -> 𝐯, 𝐯 x𝐯 -> x
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the right side of the tuple.
 -- The typeclass is also used for a small amount of extra data types to make it more convenient.
-class TupleAddR x 𝐯 𝐯x | x 𝐯 -> 𝐯x, x 𝐯x -> 𝐯, 𝐯 𝐯x -> x where
+class TupleAddR 𝐯 x 𝐯x | 𝐯 x -> 𝐯x, 𝐯 𝐯x -> x, x 𝐯x -> 𝐯 where
   infixl 5 ++>
   -- | Construct a new tuple by adding the second parameter as last item in the tuple.
   (++>)
@@ -51,7 +51,7 @@ class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 -> 𝐮𝐯, 𝐮 𝐮𝐯 -> �
 instance TupleAddL x [x] [x] where
   (<++) = (:)
 
-instance TupleAddR x [x] [x] where
+instance TupleAddR [x] x [x] where
   xs ++> x = xs ++ [x]
 
 instance TupleAppend [u] [u] [u] where
