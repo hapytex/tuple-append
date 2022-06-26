@@ -18,6 +18,9 @@ module Data.Tuple.Append.TemplateHaskell (
     -- * Function declarations
   , boxedTupleAddLFun, boxedTupleAddRFun, boxedTupleAppendFun
   , unboxedTupleAddLFun, unboxedTupleAddRFun, unboxedTupleAppendFun
+    -- * Function builders (for template Haskell)
+  , makeBoxedTupleAddLFun, makeBoxedTupleAddRFun, makeBoxedTupleAppendFun
+  , makeUnboxedTupleAddLFun, makeUnboxedTupleAddRFun, makeUnboxedTupleAppendFun
     -- * Create a function clause
     -- ** Boxed tuples
   , boxedAddLClause, boxedAddRClause, boxedAppendClause
@@ -30,19 +33,20 @@ import Control.Monad((<=<))
 import Data.Char(chr, ord)
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
 
+import Language.Haskell.TH.Lib(DecsQ)
 import Language.Haskell.TH.Quote(QuasiQuoter(QuasiQuoter))
 import Language.Haskell.TH.Syntax(
     Body(NormalB), Clause(Clause), Dec(FunD, InstanceD, SigD), Exp(TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Q, Type(AppT, ArrowT, ConT, TupleT, UnboxedTupleT, VarT), mkName
   )
 
-_varZZ' :: Name
-_varZZ' = mkName "x"
+_nameZZ :: Name
+_nameZZ = mkName "x"
 
 _varZZ :: Type
-_varZZ = VarT _varZZ'
+_varZZ = VarT _nameZZ
 
 _patZZ :: Pat
-_patZZ = VarP _varZZ'
+_patZZ = VarP _nameZZ
 
 _varNames :: Char -> [Name]
 _varNames c = map (mkName . (c :) . map (chr . (8272 +) . ord) . show) [1 :: Int ..]
@@ -60,10 +64,10 @@ _utupleVar' :: Int -> [Name] -> Type
 _utupleVar' n ns = foldl AppT (UnboxedTupleT n) (map VarT (take n ns))
 
 _tupleP'' :: ([Pat] -> Pat) -> [Name] -> Pat
-_tupleP'' f = TildeP . f . map VarP
+_tupleP'' = (. map VarP)
 
 _tupleP' :: [Name] -> Pat
-_tupleP' = _tupleP'' TupP
+_tupleP' = _tupleP'' (TildeP . TupP)
 
 _utupleP' :: [Name] -> Pat
 _utupleP' = _tupleP'' UnboxedTupP
@@ -93,7 +97,7 @@ _addLClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
 #else
 _addLClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Name -> Dec
 #endif
-_addLClause fp fe n = _clause [ _patZZ, _tupleP'' fp vars] (_tupleB' fe (_varZZ' : vars))
+_addLClause fp fe n = _clause [ _patZZ, _tupleP'' fp vars] (_tupleB' fe (_nameZZ : vars))
   where vars = take n _vNames
 
 #if MIN_VERSION_template_haskell(2,16,0)
@@ -101,7 +105,7 @@ _addRClause :: ([Pat] -> Pat) -> ([Maybe Exp] -> Exp) -> Int -> Name -> Dec
 #else
 _addRClause :: ([Pat] -> Pat) -> ([Exp] -> Exp) -> Int -> Name -> Dec
 #endif
-_addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++> _varZZ'))
+_addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++> _nameZZ))
   where vars = take n _vNames
 
 -- | Create a function declaration to append two boxed tuples together in a new boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
@@ -232,6 +236,54 @@ unboxedTupleAddRFun nm ts t = [
   , unboxedAddRClause (length ts) nm
   ]
 
+-- | Create a function declaration with signature to append a boxed tuple with the types of the first list with a boxed tuple with the types of the second list. This function can be used with template Haskell.
+makeBoxedTupleAppendFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements.
+  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements.
+  -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to append the tuples.
+makeBoxedTupleAppendFun nm l = pure . boxedTupleAppendFun nm l
+
+-- | Create a function declaration with signature to append an unboxed tuple with the types of the first list with an unboxed tuple with the types of the second list. This function can be used with template Haskell.
+makeUnboxedTupleAppendFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to append the tuples.
+makeUnboxedTupleAppendFun nm l = pure . unboxedTupleAppendFun nm l
+
+-- | Create a function declaration with signature to add an item with a given type to the left side of a boxed tuple with the types of the given list. This function can be used with template Haskell.
+makeBoxedTupleAddLFun
+  :: Name  -- ^ The name of the function to construct.
+  -> Type  -- ^ The type of the item to add to the tuple.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements.
+  -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the left side of a tuple.
+makeBoxedTupleAddLFun nm t = pure . boxedTupleAddLFun nm t
+
+-- | Create a function declaration with signature to add an item with a given type to the left side of an unboxed tuple with the types of the given list. This function can be used with template Haskell.
+makeUnboxedTupleAddLFun
+  :: Name  -- ^ The name of the function to construct.
+  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the left side of a tuple.
+makeUnboxedTupleAddLFun nm t = pure . unboxedTupleAddLFun nm t
+
+-- | Create a function declaration with signature to add an item with a given type to the right side of a boxed tuple with the types of the given list. This function can be used with template Haskell.
+makeBoxedTupleAddRFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements.
+  -> Type  -- ^ The type of the item to add to the tuple.
+  -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the right side of a tuple.
+makeBoxedTupleAddRFun nm ts = pure . boxedTupleAddRFun nm ts
+
+-- | Create a function declaration with signature to add an item with a given type to the right side of an unboxed tuple with the types of the given list. This function can be used with template Haskell.
+makeUnboxedTupleAddRFun
+  :: Name  -- ^ The name of the function to construct.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
+  -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the right side of a tuple.
+makeUnboxedTupleAddRFun nm ts = pure . unboxedTupleAddRFun nm ts
+
 _simpleInstance :: Name -> Name -> Type -> Type -> Type -> (Name -> Dec) -> Dec
 _simpleInstance tc f tca tcb tcc d = InstanceD Nothing [] (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) [d f]
 
@@ -262,8 +314,8 @@ tupleAdd
   :: Int  -- ^ The given length /n/ of the tuples to prepend and append with an element.
   -> [Dec]  -- ^ A list of two type instance declarations that contains typeclass instances for 'TupleAddL' and 'TupleAddR'.
 tupleAdd n = [
-    _simpleInstanceAddL _varZZ (_tupleVar' n _vNames) (_tupleVar' (n+1) (_varZZ' : _vNames)) (boxedAddLClause n)
-  , _simpleInstanceAddR (_tupleVar' n _vNames) _varZZ (_tupleVar' (n+1) (take n _vNames ++> _varZZ')) (boxedAddRClause n)
+    _simpleInstanceAddL _varZZ (_tupleVar' n _vNames) (_tupleVar' (n+1) (_nameZZ : _vNames)) (boxedAddLClause n)
+  , _simpleInstanceAddR (_tupleVar' n _vNames) _varZZ (_tupleVar' (n+1) (take n _vNames ++> _nameZZ)) (boxedAddRClause n)
   ]
 
 _errorQuasiQuoter :: a -> Q b
