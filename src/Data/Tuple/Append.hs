@@ -22,4 +22,4 @@ import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((
 import Data.Tuple.Append.TemplateHaskell(defineTupleAddUpto, defineTupleAppendUpto)
 
 [defineTupleAddUpto|61|]
-[defineTupleAppendUpto|16|]
+[defineTupleAppendUpto|19|]
