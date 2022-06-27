@@ -15,11 +15,32 @@ Besides tuples `(<++) :: x -> [x] -> [x]`, `(++>) :: [x] -> x -> [x]` and `(+++)
 
 ## Generating (extra) functions and instances
 
-It might  []
+It might []
+
+```haskell
+{-# LANGUAGE MagicHash, TemplateHaskell, UnboxedTuples #-}
+{-# OPTIONS_GHC -fobject-code #-}
+
+module Data.Tuple.Append.Example where
+
+import Data.Tuple.Append.TemplateHaskell(makeUnboxedTupleAppendFun)
+
+import GHC.Exts(Float#, Int#)
+
+import Language.Haskell.TH.Syntax(Type(ConT), mkName)
+
+makeUnboxedTupleAppendFun (mkName "append_if_fi") [ ConT ''Int#, ConT ''Float# ] [ ConT ''Float#, ConT ''Int# ]
+```
+
+This will a function named `append_if_fi :: (# Int#, Float# #) -> (# Float#, Int# #) -> (# Int#, Float#, Float#, Int# #)` that will append an unboxed tuple `(# Int#, Float# #)` with an `Int#` and `Float#` and an unboxed tuple `(# Float#, Int# #)` with a `Float#` and `Int#` to an unboxed tuple `(# Int#, Float#, Float#, Int# #)`.
 
 ## Package structure
 
-???
+The package contains three modules:
+
+ - [`Data.Tuple.Append`](src/Data/Tuple/Append.hs) that re-exports the `TupleAddL`, `TupleAddR` and `TupleAppend` typeclasses together with instances for the tuples;
+ - [`Data.Tuple.Append.Class`](src/Data/Tuple/Append/Class.hs) that defines the `TupleAddL`, `TupleAddR` and `TupleAppend` typeclasses together with instances for lists; and
+ - [`Data.Tuple.Append.TemplateHaskell`](src/Data/Tuple/Append/TemplateHaskell.hs) that creates template Haskell expressions for function defintions and typeclass instances for boxed and unboxed tuples.
 
 ## `tuple-append` is *safe* Haskell
 
