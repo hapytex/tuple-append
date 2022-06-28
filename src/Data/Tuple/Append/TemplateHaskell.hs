@@ -13,6 +13,8 @@ A module hat defines template Haskell expressions to define typeclass instances 
 module Data.Tuple.Append.TemplateHaskell (
     -- * Quasiquoters for typeclass instances
     defineTupleAddUpto, defineTupleAppendUpto
+    -- * Quasiquoters for unboxed tuples
+  , defineUnboxedTupleAppendFunctionsUpto
     -- * Functions to construct typeclass instance declarations
   , tupleAdd, tupleAppend, tupleAppendFor
     -- * Function declarations
@@ -36,7 +38,8 @@ import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((
 import Language.Haskell.TH.Lib(DecsQ)
 import Language.Haskell.TH.Quote(QuasiQuoter(QuasiQuoter))
 import Language.Haskell.TH.Syntax(
-    Body(NormalB), Clause(Clause), Dec(FunD, InstanceD, SigD), Exp(TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Q, Type(AppT, ArrowT, ConT, TupleT, UnboxedTupleT, VarT), mkName
+    Body(NormalB), Clause(Clause), Dec(FunD, InstanceD, SigD), Exp(TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Q, Type(AppT, ArrowT, ConT, TupleT, UnboxedTupleT, VarT)
+  , mkName
   )
 
 _nameZZ :: Name
@@ -330,3 +333,11 @@ defineTupleAddUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasi
 defineTupleAppendUpto
   :: QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
 defineTupleAppendUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (tupleAppendFor <=< enumFromTo 4 . read))
+
+-- | A 'QuasiQuoter' that constructs instances for 'TupleAppend' for tuples up to length /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it thus will construct /n-4/ instances for each tuple length.
+defineUnboxedTupleAppendFunctionsUpto
+  :: QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
+defineUnboxedTupleAppendFunctionsUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (_unboxedTupleConcats . read)
+
+_unboxedTupleConcats :: Int -> DecsQ
+_unboxedTupleConcats r = pure [ u | m <- [r-2, r-3 .. 2], n <- [r-m-2, r-m-3 .. 2], u <- unboxedTupleAppendFun (mkName ("unboxedAppend_" ++ show m ++ "_" ++ show n)) (map VarT (take m _uNames)) (map VarT (take n _vNames)) ]
