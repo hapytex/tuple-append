@@ -21,6 +21,7 @@ library
   exposed-modules:
       Data.Tuple.Append
     , Data.Tuple.Append.Class
+    , Data.Tuple.Append.Example
     , Data.Tuple.Append.TemplateHaskell
   build-depends:
       base >= 4.7 && < 5
