@@ -1,1 +1,2 @@
 - ignore: {name: "Unused LANGUAGE pragma", within: Data.Tuple.Append}
+- ignore: {name: "Unused LANGUAGE pragma", within: Data.Tuple.Append.Unboxed}
