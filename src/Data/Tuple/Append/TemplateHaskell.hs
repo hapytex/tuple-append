@@ -75,6 +75,21 @@ _tupleP' = _tupleP'' (TildeP . TupP)
 _utupleP' :: [Name] -> Pat
 _utupleP' = _tupleP'' UnboxedTupP
 
+_tupleRange :: Int -> [Int]
+#if MIN_VERSION_base(4,16,0)
+_tupleRange = enumFromTo 0  -- 0 .. n
+#else
+_tupleRange = (0 :) . enumFromTo 2  -- 0 and 2 .. n
+#endif
+
+_tupleCheck :: Int -> Bool
+#if MIN_VERSION_base(4,16,0)
+_tupleRange = (0 <=)
+#else
+_tupleCheck 0 = True
+_tupleCheck n = 2 <= n
+#endif
+
 #if MIN_VERSION_template_haskell(2,16,0)
 _tupleB' :: ([Maybe Exp] -> Exp) -> [Name] -> Body
 _tupleB' f = NormalB . f . map (Just . VarE)
@@ -310,7 +325,7 @@ tupleAppend m n = _simpleInstanceAppend (_tupleVar' m _uNames) (_tupleVar' n _vN
 tupleAppendFor
   :: Int  -- ^ The given number /l/ for which typeclass instances of 'TupleAppend' will be made with /m/ and /n/ such that /l=m+n/.
   -> [Dec]  -- ^ A list of typelcass instances for the 'TupleAppend' typeclass.
-tupleAppendFor n = [tupleAppend m (n-m) | m <- [0 .. n]]
+tupleAppendFor l = [tupleAppend m n | m <- _tupleRange l, let n = l - m, _tupleCheck n ]
 
 -- | Define a typeclass instance for 'TupleAddL' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left side.
 tupleAddL
@@ -328,7 +343,9 @@ tupleAddR n = _simpleInstanceAddR (_tupleVar' n _vNames) _varZZ (_tupleVar' (n+1
 tupleAdd
   :: Int  -- ^ The given length /n/ of the tuples to prepend and append with an element.
   -> [Dec]  -- ^ A list of two type instance declarations that contains typeclass instances for 'TupleAddL' and 'TupleAddR'.
-tupleAdd n = [tupleAddL n, tupleAddR n]
+tupleAdd n
+  | _tupleCheck n && _tupleCheck (n+1) = [tupleAddL n, tupleAddR n]
+  | otherwise = []
 
 _errorQuasiQuoter :: a -> Q b
 _errorQuasiQuoter = const (fail "The quasi quoter can only be used to define declarations")
@@ -341,7 +358,7 @@ defineTupleAddUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasi
 -- | A 'QuasiQuoter' that constructs instances for 'TupleAppend' for tuples up to length /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it thus will construct /n-4/ instances for each tuple length.
 defineTupleAppendUpto
   :: QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
-defineTupleAppendUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (tupleAppendFor <=< enumFromTo 2 . read))
+defineTupleAppendUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (tupleAppendFor <=< enumFromTo 0 . read))
 
 -- | A 'QuasiQuoter' that constructs instances for 'TupleAppend' for tuples up to length /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it thus will construct /n-4/ instances for each tuple length.
 defineUnboxedTupleAppendFunctionsUpto
