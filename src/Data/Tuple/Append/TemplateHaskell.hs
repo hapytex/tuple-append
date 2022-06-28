@@ -33,9 +33,6 @@ module Data.Tuple.Append.TemplateHaskell (
 import Control.Monad((<=<))
 
 import Data.Char(chr, ord)
-#if MIN_VERSION_base(4,16,0)
-import Data.Tuple(Solo)
-#endif
 import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
 
 import Language.Haskell.TH.Lib(DecsQ)
@@ -64,9 +61,6 @@ _vNames :: [Name]
 _vNames = _varNames 'v'
 
 _tupleVar' :: Int -> [Name] -> Type
-#if MIN_VERSION_base(4,16,0)
-_tupleVar' 1 (n:_) = ConT (mkName ''Solo) `AppT` VarT n
-#endif
 _tupleVar' n ns = foldl AppT (TupleT n) (map VarT (take n ns))
 
 _utupleVar' :: Int -> [Name] -> Type
