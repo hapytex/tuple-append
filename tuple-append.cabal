@@ -24,6 +24,7 @@ library
     , Data.Tuple.Append.TemplateHaskell
   build-depends:
       base >= 4.7 && < 5
+    , ghc-prim >=0.3.10
     , template-haskell >= 2.5.0.0
   default-language:    Haskell2010
 
