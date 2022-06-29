@@ -18,7 +18,7 @@ module Data.Tuple.Append.Class (
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the left side of the tuple.
 -- The typeclass is also used for a small amount of extra datatypes to make it more convenient.
-class TupleAddL x 𝐯 x𝐯 | x 𝐯 -> x𝐯, x x𝐯 -> 𝐯, 𝐯 x𝐯 -> x where
+class TupleAddL x 𝐯 x𝐯 | x 𝐯 -> x𝐯, x𝐯 -> 𝐯, x𝐯 -> x where
   infixr 5 <++
   -- | Construct a new tuple by adding the first parameter as first item in the tuple.
   (<++)
@@ -29,7 +29,7 @@ class TupleAddL x 𝐯 x𝐯 | x 𝐯 -> x𝐯, x x𝐯 -> 𝐯, 𝐯 x𝐯 -> x
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the right side of the tuple.
 -- The typeclass is also used for a small amount of extra data types to make it more convenient.
-class TupleAddR 𝐯 x 𝐯x | 𝐯 x -> 𝐯x, 𝐯 𝐯x -> x, x 𝐯x -> 𝐯 where
+class TupleAddR 𝐯 x 𝐯x | 𝐯 x -> 𝐯x, 𝐯x -> x, 𝐯x -> 𝐯 where
   infixl 5 ++>
   -- | Construct a new tuple by adding the second parameter as last item in the tuple.
   (++>)

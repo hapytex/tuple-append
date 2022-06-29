@@ -15,6 +15,8 @@ For `(+++) :: (u₁, u₂, …, uₘ) -> (v₁, v₂, …, vₙ) -> (u₁, u₂,
 
 Besides tuples `(<++) :: x -> [x] -> [x]`, `(++>) :: [x] -> x -> [x]` and `(+++) :: [u] -> [u] -> [u]` are also defined on lists, to make the functions more reusable.
 
+For builds where one makes use of `ghc-prim` prior to version `ghc-0.7.0`, the `Solo` data type (a tuple with one element) is not available. For these builds, it will thus not make instances with singleton tuples, and thus there are only 61 instances for `TupleAddL` and `TupleAddR` and 173 instances for `TupleAppend` that work with tuples. Whether the "*unit type*" `()` is a tuple with no elements, and the `Solo` type is a tuple with exactly one element is debatable, but regardless, this package implemented instances for these.
+
 ## Generating (extra) functions and instances
 
 One can create extra functions and typeclass instances to prepend and append tuples. While we think that the number of instances is likely sufficient for all practical use cases, this might be more useful when one aims to construct such functions for *unboxed* tuples.
@@ -31,10 +33,10 @@ import GHC.Exts(Float#, Int#)
 
 import Language.Haskell.TH.Syntax(Type(ConT), mkName)
 
-makeUnboxedTupleAppendFun (mkName "append_if_fi") [ ConT ''Int#, ConT ''Float# ] [ ConT ''Float#, ConT ''Int# ]
+makeUnboxedTupleAppendFun (mkName "append_if_xf") [ ConT ''Int#, ConT ''Float ] [ VarT (mkName "a"), ConT ''Float# ]
 ```
 
-This will a function named `append_if_fi :: (# Int#, Float# #) -> (# Float#, Int# #) -> (# Int#, Float#, Float#, Int# #)` that will append an unboxed tuple `(# Int#, Float# #)` with an `Int#` and `Float#` and an unboxed tuple `(# Float#, Int# #)` with a `Float#` and `Int#` to an unboxed tuple `(# Int#, Float#, Float#, Int# #)`.
+This will a function named `append_if_xf :: (# Int#, Float #) -> (# a, Float# #) -> (# Int#, Float, a, Float# #)` that will append an unboxed tuple `(# Int#, Float #)` with an `Int#` and `Float` and an unboxed tuple `(# a, Float# #)` with a lifted type `a` and `Float#` to an unboxed tuple `(# Int#, Float, a, Float# #)`.
 
 ## Package structure
 
