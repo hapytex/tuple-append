@@ -76,14 +76,14 @@ _utupleP' :: [Name] -> Pat
 _utupleP' = _tupleP'' UnboxedTupP
 
 _tupleRange :: Int -> [Int]
-#if MIN_VERSION_base(4,9,0)
+#if MIN_VERSION_base(4,15,0)
 _tupleRange = enumFromTo 0  -- 0 .. n
 #else
 _tupleRange = (0 :) . enumFromTo 2  -- 0 and 2 .. n
 #endif
 
 _tupleCheck :: Int -> Bool
-#if MIN_VERSION_base(4,9,0)
+#if MIN_VERSION_base(4,15,0)
 _tupleCheck = (0 <=)
 #else
 _tupleCheck 0 = True
