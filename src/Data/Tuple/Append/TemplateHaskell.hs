@@ -202,8 +202,8 @@ boxedTupleAppendFun nm l r = [
 -- | Create a function declaration with signature to append an unboxed tuple with the types of the first list with an unboxed tuple with the types of the second list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
 unboxedTupleAppendFun
   :: Name  -- ^ The name of the function to construct.
-  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements, all types should be unlifted types.
-  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
+  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
   -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 unboxedTupleAppendFun nm l r = [
     _signature nm (_utupType l) (_utupType r) (_utupType (l ++ r))
@@ -224,8 +224,8 @@ boxedTupleAddLFun nm t ts = [
 -- | Create a function declaration with signature to add an item with a given type to the left side of an unboxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
 unboxedTupleAddLFun
   :: Name  -- ^ The name of the function to construct.
-  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
-  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> Type  -- ^ The type of the item to add to the tuple, this can be a lifted or unlifted type or a type variable.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
   -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 unboxedTupleAddLFun nm t ts = [
     _signature nm t (_utupType ts) (_utupType (t : ts))
@@ -246,8 +246,8 @@ boxedTupleAddRFun nm ts t = [
 -- | Create a function declaration with signature to add an item with a given type to the right side of an unboxed tuple with the types of the given list. This will contain two 'Dec' items: one for the signature and one for the function declaration itself.
 unboxedTupleAddRFun
   :: Name  -- ^ The name of the function to construct.
-  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
-  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
+  -> Type  -- ^ The type of the item to add to the tuple, this can be a lifted or unlifted type or a type variable.
   -> [Dec]  -- ^ A list that contains two 'Dec' objects: one for the function signature declaration, and one for the function declaration.
 unboxedTupleAddRFun nm ts t = [
     _signature nm (_utupType ts) t (_utupType (ts ++> t))
@@ -265,8 +265,8 @@ makeBoxedTupleAppendFun nm l = pure . boxedTupleAppendFun nm l
 -- | Create a function declaration with signature to append an unboxed tuple with the types of the first list with an unboxed tuple with the types of the second list. This function can be used with template Haskell.
 makeUnboxedTupleAppendFun
   :: Name  -- ^ The name of the function to construct.
-  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements, all types should be unlifted types.
-  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> [Type]  -- ^ The types of the first boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
+  -> [Type]  -- ^ The types of the second boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to append the tuples.
 makeUnboxedTupleAppendFun nm l = pure . unboxedTupleAppendFun nm l
 
@@ -281,8 +281,8 @@ makeBoxedTupleAddLFun nm t = pure . boxedTupleAddLFun nm t
 -- | Create a function declaration with signature to add an item with a given type to the left side of an unboxed tuple with the types of the given list. This function can be used with template Haskell.
 makeUnboxedTupleAddLFun
   :: Name  -- ^ The name of the function to construct.
-  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
-  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
+  -> Type  -- ^ The type of the item to add to the tuple, this can be a lifted or unlifted type or a type variable.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the left side of a tuple.
 makeUnboxedTupleAddLFun nm t = pure . unboxedTupleAddLFun nm t
 
@@ -297,8 +297,8 @@ makeBoxedTupleAddRFun nm ts = pure . boxedTupleAddRFun nm ts
 -- | Create a function declaration with signature to add an item with a given type to the right side of an unboxed tuple with the types of the given list. This function can be used with template Haskell.
 makeUnboxedTupleAddRFun
   :: Name  -- ^ The name of the function to construct.
-  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types should be unlifted types.
-  -> Type  -- ^ The type of the item to add to the tuple, should be an unlifted type.
+  -> [Type]  -- ^ The types of the boxed tuple, should contain at least two elements, all types can be lifted or unlifted types or type variables.
+  -> Type  -- ^ The type of the item to add to the tuple, this can be a lifted or unlifted type or a type variable.
   -> DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the right side of a tuple.
 makeUnboxedTupleAddRFun nm ts = pure . unboxedTupleAddRFun nm ts
 
