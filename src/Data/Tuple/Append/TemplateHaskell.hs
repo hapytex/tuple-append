@@ -353,7 +353,11 @@ _errorQuasiQuoter = const (fail "The quasi quoter can only be used to define dec
 -- | A 'QuasiQuoter' that constructs instances for 'TupleAddL' and 'TupleAddR' for tuples up to length /n/ where /n/ is read as text input for the quasi quoter.
 defineTupleAddUpto
   :: QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
-defineTupleAddUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (tupleAdd <=< enumFromTo 0 . read))
+defineTupleAddUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (_defineTupleAddUpTo . read)
+
+_defineTupleAddUpTo :: Int -> DecsQ
+_defineTupleAddUpTo n = pure (map tupleAddL ns ++ map tupleAddR ns)
+    where ns = reverse (filter (_tupleCheck . succ) (_tupleRange n))
 
 -- | A 'QuasiQuoter' that constructs instances for 'TupleAppend' for tuples up to length /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it thus will construct /n-4/ instances for each tuple length.
 defineTupleAppendUpto

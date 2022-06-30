@@ -3,14 +3,11 @@
 
 module Data.Tuple.Append.Example where
 
-import Data.Tuple.Append.TemplateHaskell(makeUnboxedTupleAppendFun, makeBoxedTupleAppendFun)
+import Data.Tuple.Append.TemplateHaskell(makeBoxedTupleAppendFun, makeUnboxedTupleAppendFun)
 
--- import GHC.Exts(Float#, Int#, Float(F#), Int(I#))
+import GHC.Exts(Float#, Int#)
 
 import Language.Haskell.TH.Syntax(Type(ConT, VarT), mkName)
 
--- makeUnboxedTupleAppendFun (mkName "append_if_fi") [ VarT (mkName "a"), ConT ''Float# ] [ ConT ''Float#, ConT ''Int# ]
-makeBoxedTupleAppendFun (mkName "append_0_fi") [ ] [ ]
-
-
--- main = let (# a, b, c, d #) = append_if_fi (# 1, 4.0# #) (# 2.0#, 5# #) in print (a, F# b, F# c, I# d)
+makeBoxedTupleAppendFun (mkName "append_if_f") [ ConT ''Int, ConT ''Float ] [ ConT ''Float ]
+makeUnboxedTupleAppendFun (mkName "uappend_ix_f") [ ConT ''Int#, VarT (mkName "a")] [ConT ''Float# ]
