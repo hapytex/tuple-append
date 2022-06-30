@@ -5,7 +5,7 @@
 
 ## Usage
 
-The package defines three typeclasses: `TupleAddL`, `TupleAddR`, and `TupleAppend`, these are defined in the [`Data.Tuple.Append.Class` module](src/Data/Tuple/Append/Class.hs) and reexported in the [`Data.Tuple.Append` module](src/Data/Tuple/Append.hs). These export the functions `(<++) :: x -> (v₁, v₂, …, vₙ) -> (x, v₁, v₂, …, vₙ)`, `(++>) :: (v₁, v₂, …, vₙ) -> x -> (x, v₁, v₂, …, vₙ, x)` and `(+++) :: (u₁, u₂, …, uₘ) -> (v₁, v₂, …, vₙ) -> (u₁, u₂, …, uₘ, v₁, v₂, …, vₙ)` respectively. These functions thus add an element to the left side and the right side of tuple, or append two tuples together into a new tuple. The [`Data.Tuple.Append` module](src/Data/Tuple/Append.hs) creates instances for these typeclasses.
+The package defines three typeclasses: `TupleAddL`, `TupleAddR`, and `TupleAppend`, these are defined in the [`Data.Tuple.Append.Class` module](src/Data/Tuple/Append/Class.hs) and reexported in the [`Data.Tuple.Append` module](src/Data/Tuple/Append.hs). These export the functions `(<++) :: x -> (v₁, v₂, …, vₙ) -> (x, v₁, v₂, …, vₙ)`, `(++>) :: (v₁, v₂, …, vₙ) -> x -> (v₁, v₂, …, vₙ, x)` and `(+++) :: (u₁, u₂, …, uₘ) -> (v₁, v₂, …, vₙ) -> (u₁, u₂, …, uₘ, v₁, v₂, …, vₙ)` respectively. These functions thus add an element to the left side and the right side of tuple, or append two tuples together into a new tuple. The [`Data.Tuple.Append` module](src/Data/Tuple/Append.hs) creates instances for these typeclasses.
 
 ## Standard instances
 
