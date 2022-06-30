@@ -36,7 +36,8 @@ test-suite append-tuple
       Data.Tuple.AppendSpec
   build-depends:
       base
-    , sunrise
+    , tuple-append
+    , ghc-prim >=0.3.10
     , hspec ==2.*
   default-language:    Haskell2010
 
