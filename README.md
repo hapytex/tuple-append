@@ -39,7 +39,7 @@ makeBoxedTupleAppendFun (mkName "append_if_f") [ ConT ''Int, ConT ''Float ] [ Co
 makeUnboxedTupleAppendFun (mkName "uappend_ix_f") [ ConT ''Int#, VarT (mkName "a")] [ConT ''Float# ]
 ```
 
-This will create a function named `append_if :: (Int, Float) -> (Float) -> (Int, Float, Float)` that appends a 2-tuple with an `Int` and a `Float` to a singleton tuple with a `Float` to a 3-tuple with an `Int`, a `Float` and another `Float`. Furthermore it creates a function named `uappend_ix_f :: (# Int#, a #) -> (# Float# #) -> (# Int#, a, Float# #)` that will append an unboxed tuple `(# Int#, a #)` with an `Int#` a type variable `a` and an unboxed tuple `(# Float# #)` with a `Float#` to an unboxed tuple `(# Int#, a, Float# #)`. This example can be found in the hidden [`Data.Tuple.Append.Example` module](src/Data/Tuple/Append/Example.hs).
+This will create a function named `append_if_f :: (Int, Float) -> (Float) -> (Int, Float, Float)` that appends a 2-tuple with an `Int` and a `Float` to a singleton tuple with a `Float` to a 3-tuple with an `Int`, a `Float` and another `Float`. Furthermore it creates a function named `uappend_ix_f :: (# Int#, a #) -> (# Float# #) -> (# Int#, a, Float# #)` that will append an unboxed tuple `(# Int#, a #)` with an `Int#` a type variable `a` and an unboxed tuple `(# Float# #)` with a `Float#` to an unboxed tuple `(# Int#, a, Float# #)`. This example can be found in the hidden [`Data.Tuple.Append.Example` module](src/Data/Tuple/Append/Example.hs).
 
 ## Package structure
 
@@ -51,7 +51,7 @@ The package contains three modules:
 
 ## `tuple-append` is *safe* Haskell
 
-The package contains a module [`Data.Tuple.Append.TemplateHaskell`](src/Data/Tuple/Append/TemplateHaskell.hs) that defines routines to construct the instances for a large number of tuples. These are then used with *quasiquotation* to define safe instances.
+The package contains a module [`Data.Tuple.Append.TemplateHaskell`](src/Data/Tuple/Append/TemplateHaskell.hs) that defines routines to construct the instances for a large number of tuples. These are then used with *quasiquotation* to define instances in a safe module.
 
 ## Contribute
 
