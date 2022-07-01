@@ -22,6 +22,8 @@ library
       Data.Tuple.Append
     , Data.Tuple.Append.Class
     , Data.Tuple.Append.TemplateHaskell
+  other-modules:
+      Data.Tuple.Append.Example
   build-depends:
       base >= 4.7 && < 5
     , ghc-prim >=0.3.10
