@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, MagicHash, MultiParamTypeClasses, QuasiQuotes, Safe, UnboxedTuples #-}
+{-# LANGUAGE FlexibleInstances, MultiParamTypeClasses, QuasiQuotes, Safe #-}
 {-# OPTIONS_GHC -Wall -fno-warn-orphans -Werror #-}
 
 {-|
@@ -22,4 +22,4 @@ import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((
 import Data.Tuple.Append.TemplateHaskell(defineTupleAddUpto, defineTupleAppendUpto)
 
 [defineTupleAddUpto|61|]
-[defineTupleAppendUpto|16|]
+[defineTupleAppendUpto|19|]
