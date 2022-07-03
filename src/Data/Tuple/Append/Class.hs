@@ -16,6 +16,10 @@ module Data.Tuple.Append.Class (
   , TupleAppend((+++))
   ) where
 
+#if MIN_VERSION_base(4,9,0)
+import Data.List.NonEmpty(NonEmpty((:|)), (<|))
+#endif
+
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the left side of the tuple.
 -- The typeclass is also used for a small amount of extra datatypes to make it more convenient.
 class TupleAddL x 𝐯 x𝐯 | x 𝐯 -> x𝐯, x𝐯 -> x, x𝐯 -> 𝐯 where
@@ -56,3 +60,15 @@ instance TupleAddR [x] x [x] where
 
 instance TupleAppend [u] [u] [u] where
   (+++) = (++)
+
+#if MIN_VERSION_base(4,9,0)
+instance TupleAddL x (NonEmpty x) (NonEmpty x) where
+  (<++) = (<|)
+
+instance TupleAddR [x] x [x] where
+  ~(x :| xs) ++> xn = x :| (xs ++> xn)
+
+instance TupleAppend [u] [u] [u] where
+  (+++) = (<>)
+
+#endif
