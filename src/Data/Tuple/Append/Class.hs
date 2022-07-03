@@ -1,4 +1,4 @@
-{-# LANGUAGE FlexibleInstances, FunctionalDependencies, Safe #-}
+{-# LANGUAGE CPP, FlexibleInstances, FunctionalDependencies, Safe #-}
 
 {-|
 Module      : Data.Tuple.Append.Class
