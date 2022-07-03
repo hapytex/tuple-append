@@ -65,10 +65,10 @@ instance TupleAppend [u] [u] [u] where
 instance TupleAddL x (NonEmpty x) (NonEmpty x) where
   (<++) = (<|)
 
-instance TupleAddR [x] x [x] where
+instance TupleAddR (NonEmpty x) x (NonEmpty x) where
   ~(x :| xs) ++> xn = x :| (xs ++> xn)
 
-instance TupleAppend [u] [u] [u] where
+instance TupleAppend (NonEmpty x) (NonEmpty x) (NonEmpty x) where
   (+++) = (<>)
 
 #endif
