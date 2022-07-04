@@ -16,6 +16,10 @@ module Data.Tuple.Append.Class (
   , TupleAppend((+++))
   ) where
 
+#if MIN_VERSION_base(4,11,0)
+#elif MIN_VERSION_base(4,9,0)
+import Data.Semigroup((<>))
+#endif
 #if MIN_VERSION_base(4,9,0)
 import Data.List.NonEmpty(NonEmpty((:|)), (<|))
 #endif
