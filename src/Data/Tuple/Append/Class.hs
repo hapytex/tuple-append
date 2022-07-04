@@ -74,5 +74,4 @@ instance TupleAddR (NonEmpty x) x (NonEmpty x) where
 
 instance TupleAppend (NonEmpty x) (NonEmpty x) (NonEmpty x) where
   (+++) = (<>)
-
 #endif
