@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, StandaloneDeriving #-}
+{-# LANGUAGE CPP, StandaloneDeriving, UnicodeSyntax #-}
 
 module Data.Tuple.AppendSpec where
 
