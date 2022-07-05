@@ -11,13 +11,13 @@ import GHC.Tuple(Solo(Solo))
 import Test.Hspec
 
 #if MIN_VERSION_ghc_prim(0,7,0)
-deriving instance Eq a => Eq (Solo a)
+deriving instance Eq a ⇒ Eq (Solo a)
 #endif
 
-toAdd :: Int
+toAdd ∷ Int
 toAdd = 1
 
-spec :: Spec
+spec ∷ Spec
 spec = do
   describe "TupleAddL" $ do
 #if MIN_VERSION_ghc_prim(0,7,0)
