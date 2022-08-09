@@ -45,6 +45,25 @@ makeUnboxedTupleAppendFun (mkName "uappend_ix_f") [ ConT ''Int#, VarT (mkName "a
 This will create a function named `append_if_f ∷ (Int, Float) → Solo Float → (Int, Float, Float)` that appends a 2-tuple with an `Int` and a `Float` to a singleton tuple with a `Float` to a 3-tuple with an `Int`, a `Float` and another `Float`. Furthermore it creates a function named `uappend_ix_f ∷ (# Int#, a #) → (# Float# #) → (# Int#, a, Float# #)` that will append an unboxed tuple `(# Int#, a #)` with an `Int#` a type variable `a` and an unboxed tuple `(# Float# #)` with a `Float#` to an unboxed tuple `(# Int#, a, Float# #)`. This example can be found in the hidden [`Data.Tuple.Append.Example` module](https://github.com/hapytex/tuple-append/blob/master/src/Data/Tuple/Append/Example.hs).
 
 
+## Laziness
+
+The prepend and append functions are implemented with *irrefutable* patterns for the tuples. So an append function is implemented as:
+
+```haskell
+~(u₁, u₂, …, uₘ) +++ ~(v₁, v₂, …, vₙ) = (u₁, u₂, …, uₘ, v₁, v₂, …, vₙ)
+```
+
+These tildes will prevent evaluating the tuples to *weak head normal-form (WHNF)* if this is not necessary. For example if one would use:
+
+```haskell
+ghci> let (_, _, x, _) = undefined ++ (4, 2) in x
+```
+
+then this will return `4`, whereas if we would not use an irrefutable pattern, then this would error, since it will first try to evaluete the first and second parameters to WHNF, and if one of these fails, will thus raise an error.
+
+This is *not* the case for *unboxed* tuples, since then the parameters will not be the result of an evaluation, but are already passed without the tuple.
+
+
 ## Package structure
 
 The package contains three modules:
