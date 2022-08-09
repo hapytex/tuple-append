@@ -2,6 +2,10 @@
 
 For a full list of changes, see the history on [*GitHub*](https://github.com/hapytex/tuple-append).
 
+## Version 0.1.2.0
+
+Convert the module to `UnicodeSyntax`, and add a section about the laziness of `(<++)`, `(+++)` and `(++>)`.
+
 ## Version 0.1.1.0
 
 If the `base` package is at least `base-4.9.0.0`, it also implements `TupleAddL`, `TupleAddR` and `TupleAppend` for the `NonEmpty` data type of the `Data.List.NonEmpty` module.
