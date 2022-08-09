@@ -56,7 +56,8 @@ The prepend and append functions are implemented with *irrefutable* patterns for
 These tildes will prevent evaluating the tuples to *weak head normal-form (WHNF)* if this is not necessary. For example if one would use:
 
 ```haskell
-ghci> let (_, _, x, _) = undefined ++ (4, 2) in x
+ghci> let (_, _, x, _) = undefined +++ (4, 2) in x
+4
 ```
 
 then this will return `4`, whereas if we would not use an irrefutable pattern, then this would error, since it will first try to evaluete the first and second parameters to WHNF, and if one of these fails, will thus raise an error.
