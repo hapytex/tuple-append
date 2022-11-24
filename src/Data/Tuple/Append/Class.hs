@@ -59,11 +59,24 @@ class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 → 𝐮𝐯, 𝐮 𝐮𝐯 →
     → 𝐯  -- ^ The second tuple to append.
     → 𝐮𝐯  -- ^ A tuple that contains the items of the first and the second tuple.
 
+-- | A typeclass to process a tuple of 'Applicative' elements to an 'Applicative' of a tuple. While a 2-tuple
+-- has a 'sequenceA' function, that function sees the tuples as a collection of /one/ element: the second item.
+-- This 'SequenceTuple' typeclass considers this a collection of /n/ elements for an /n/-tuple and thus
+-- runs over all elements of the tuple.
 class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f 𝐮 -> f𝐮 where
-  sequenceTupleA :: f𝐮 -> f 𝐮
+  -- | Sequence the elements of the tuple. For an /n/ tuple @sequenceTupleA (v₁, v₂, …, vₙ)@ is equivalent to:
+  -- @(,,…,) <$> v₁ <*> v₂ <*> … <*> vₙ@.
+  sequenceTupleA
+    :: f𝐮  -- ^ The tuple with applicative elements.
+    -> f 𝐮  -- ^ An applicative tuple thas has sequenced over the elements of the tuple.
   default sequenceTupleA :: (Traversable t, 𝐮 ~ t b, f𝐮 ~ t (f b)) => f𝐮 -> f 𝐮
   sequenceTupleA = sequenceA
-  sequenceTupleA_ :: f𝐮 -> f ()
+
+  -- | Sequence the elements of the tuple, and return the unit. For an /n/ tuple @sequenceTupleA_ (v₁, v₂, …, vₙ)@
+  -- is equivalent to: @v₁ *> (v₂ *> (… *> (vₙ *> pure ())))@.
+  sequenceTupleA_
+    :: f𝐮  -- ^ The tuple of applicatives to sequence.
+    -> f ()  -- ^ An applicative for the unit type.
   sequenceTupleA_ x = sequenceTupleA x *> pure ()
   {-# MINIMAL sequenceTupleA #-}
 
