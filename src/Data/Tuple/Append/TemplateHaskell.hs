@@ -12,7 +12,7 @@ A module hat defines template Haskell expressions to define typeclass instances 
 
 module Data.Tuple.Append.TemplateHaskell (
     -- * Quasiquoters for typeclass instances
-    defineTupleAddUpto, defineTupleAppendUpto
+    defineTupleAddUpto, defineTupleAppendUpto, defineSequenceTupleUpTo
     -- * Quasiquoters for unboxed tuples
   , defineUnboxedTupleAppendFunctionsUpto
     -- * Functions to construct typeclass instance declarations
@@ -33,13 +33,13 @@ module Data.Tuple.Append.TemplateHaskell (
 import Control.Monad((<=<))
 
 import Data.Char(chr, ord)
-import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
+import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)), SequenceTuple(sequenceTupleA, sequenceTupleA_))
 
 import Language.Haskell.TH.Lib(DecsQ)
 import Language.Haskell.TH.Quote(QuasiQuoter(QuasiQuoter))
 import Language.Haskell.TH.Syntax(
-    Body(NormalB), Clause(Clause), Dec(FunD, InstanceD, SigD), Exp(TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Q, Type(AppT, ArrowT, ConT, TupleT, UnboxedTupleT, VarT)
-  , mkName
+    Body(NormalB), Clause(Clause), Cxt, Dec(FunD, InstanceD, SigD), Exp(AppE, ConE, TupE, UnboxedTupE, VarE), Name, Pat(TildeP, TupP, UnboxedTupP, VarP), Q, Type(AppT, ArrowT, ConT, TupleT, UnboxedTupleT, VarT)
+  , mkName, tupleDataName
   )
 
 _nameZZ ∷ Name
@@ -50,6 +50,12 @@ _varZZ = VarT _nameZZ
 
 _patZZ ∷ Pat
 _patZZ = VarP _nameZZ
+
+_nameFF ∷ Name
+_nameFF = mkName "f"
+
+_varFF ∷ Type
+_varFF = VarT _nameFF
 
 _varNames ∷ Char → [Name]
 _varNames c = map (mkName . (c :) . map (chr . (8272 +) . ord) . show) [1 ∷ Int ..]
@@ -62,6 +68,9 @@ _vNames = _varNames 'v'
 
 _tupleVar' ∷ Int → [Name] → Type
 _tupleVar' n ns = foldl AppT (TupleT n) (map VarT (take n ns))
+
+_tupleVar'' :: Int -> Type -> [Name] -> Type
+_tupleVar'' n f ns = foldl AppT (TupleT n) (map ((f `AppT`) . VarT) (take n ns))
 
 _utupleVar' ∷ Int → [Name] → Type
 _utupleVar' n ns = foldl AppT (UnboxedTupleT n) (map VarT (take n ns))
@@ -100,6 +109,22 @@ _tupleB' f = NormalB . f . map VarE
 
 _clause ∷ [Pat] → Body → Name → Dec
 _clause ps b = (`FunD` [Clause ps b []])
+
+sequenceExprA :: Int -> [Name] -> Exp
+sequenceExprA n xs = foldl (flip ($)) (ConE (tupleDataName n)) exps'
+  where exps = map (AppE . VarE) ('(<$>) : repeat '(<*>)) :: [Exp -> Exp]
+        exps' = zipWith (\f x y -> f y `AppE` VarE x) exps xs :: [Exp -> Exp]
+
+sequenceExprA_ :: [Name] -> Exp
+sequenceExprA_ = foldr (AppE . AppE (VarE '(*>))) (VarE 'pure `AppE` ConE '()) . map VarE
+
+sequenceClauseA ∷ Int → Dec
+sequenceClauseA n = _clause [ _tupleP'' TupP vn] (NormalB (sequenceExprA n vn)) 'sequenceTupleA
+  where vn = take n _vNames
+
+sequenceClauseA_ ∷ Int → Dec
+sequenceClauseA_ n = _clause [ _tupleP'' TupP vn] (NormalB (sequenceExprA_ vn)) 'sequenceTupleA_
+  where vn = take n _vNames
 
 #if MIN_VERSION_template_haskell(2,16,0)
 _appendClause ∷ ([Pat] → Pat) → ([Maybe Exp] → Exp) → Int → Int → Name → Dec
@@ -302,8 +327,18 @@ makeUnboxedTupleAddRFun
   → DecsQ  -- ^ A builder to construct the declaration of the signature and a body of the function to add an element at the right side of a tuple.
 makeUnboxedTupleAddRFun nm ts = pure . unboxedTupleAddRFun nm ts
 
+
+_simpleInstance'' ∷ Cxt -> Name -> Type → Type → Type → [Dec] → Dec
+_simpleInstance'' cxt tc tca tcb tcc dfs = InstanceD Nothing cxt (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) dfs
+
+_simpleInstance' ∷ Name → Type → Type → Type → [Dec] → Dec
+_simpleInstance' = _simpleInstance'' []
+
 _simpleInstance ∷ Name → Name → Type → Type → Type → (Name → Dec) → Dec
-_simpleInstance tc f tca tcb tcc d = InstanceD Nothing [] (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) [d f]
+_simpleInstance tc f tca tcb tcc d = _simpleInstance' tc tca tcb tcc [d f]
+
+_simpleInstanceLift ∷ Type → Type → Type → (Name → Dec) → Dec
+_simpleInstanceLift = _simpleInstance ''TupleAppend '(+++)
 
 _simpleInstanceAppend ∷ Type → Type → Type → (Name → Dec) → Dec
 _simpleInstanceAppend = _simpleInstance ''TupleAppend '(+++)
@@ -313,6 +348,14 @@ _simpleInstanceAddL = _simpleInstance ''TupleAddL '(<++)
 
 _simpleInstanceAddR ∷ Type → Type → Type → (Name → Dec) → Dec
 _simpleInstanceAddR = _simpleInstance ''TupleAddR '(++>)
+
+_simpleSequenceInstance :: Type -> Type -> [Dec] -> Dec
+_simpleSequenceInstance = _simpleInstance'' [ConT ''Prelude.Applicative `AppT` _varFF] ''SequenceTuple _varFF
+
+sequenceTuple
+  :: Int
+  -> Dec
+sequenceTuple n = _simpleSequenceInstance (_tupleVar'' n _varFF _vNames) (_tupleVar' n _vNames) [sequenceClauseA n, sequenceClauseA_ n]
 
 -- | Define a typeclass instance for 'TupleAppend' where it appens tuples with /m/ and /n/ items with /m/ and /n/ the parameters of the function.
 tupleAppend
@@ -326,6 +369,12 @@ tupleAppendFor
   ∷ Int  -- ^ The given number /l/ for which typeclass instances of 'TupleAppend' will be made with /m/ and /n/ such that /l=m+n/.
   → [Dec]  -- ^ A list of typeclass instances for the 'TupleAppend' typeclass.
 tupleAppendFor l = [tupleAppend m n | m ← _tupleRange l, let n = l - m, _tupleCheck n ]
+
+-- | Define a typeclass instance for the 'SequenceTuple' typeclass that will sequence over a tuple for the given length.
+sequenceTupleFor
+  :: Int  -- ^ The given number /n/ that specifies the *arity* of the tuple for which to construct an instance. Will return an empty list of the number is invalid.
+  -> [Dec]  -- ^ A list of typeclass instances for the 'SequenceTuple' typeclass.
+sequenceTupleFor n = [sequenceTuple n | _tupleCheck n]
 
 -- | Define a typeclass instance for 'TupleAddL' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left side.
 tupleAddL
@@ -363,6 +412,11 @@ _defineTupleAddUpTo n = pure (map tupleAddL ns ++ map tupleAddR ns)
 defineTupleAppendUpto
   ∷ QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
 defineTupleAppendUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (tupleAppendFor <=< enumFromTo 0 . read))
+
+-- | A 'QuasiQuoter' that constructs instances for the 'SequenceTuple' typeclass for tuples up to a length /n/ where /n/ i read as text input for the quasi quoter. For a single /n/ it will thus construct /n/ instances in total.
+defineSequenceTupleUpTo
+  :: QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
+defineSequenceTupleUpTo = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (sequenceTupleFor <=< enumFromTo 1 . read))
 
 -- | A 'QuasiQuoter' that constructs function declarations with the name @unboxedAppend_i_j@ with /i/ and /j/ the number of items of the unboxed tuples. The items sum up to at most /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it thus will construct /n+1/ instances for each tuple length.
 defineUnboxedTupleAppendFunctionsUpto

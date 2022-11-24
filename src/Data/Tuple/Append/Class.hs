@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, FlexibleInstances, FunctionalDependencies, Safe, UnicodeSyntax #-}
+{-# LANGUAGE CPP, DefaultSignatures, FlexibleInstances, FunctionalDependencies, Safe, TypeFamilies, UnicodeSyntax #-}
 
 {-|
 Module      : Data.Tuple.Append.Class
@@ -14,14 +14,17 @@ module Data.Tuple.Append.Class (
     TupleAddL((<++)), TupleAddR((++>))
   -- * Append two tuples
   , TupleAppend((+++))
+  -- * Lifting tuples of applicatives
+  , SequenceTuple(sequenceTupleA, sequenceTupleA_)
   ) where
 
+import Data.Foldable(sequenceA_)
+#if MIN_VERSION_base(4,9,0)
+import Data.List.NonEmpty(NonEmpty((:|)), (<|))
+#endif
 #if MIN_VERSION_base(4,11,0)
 #elif MIN_VERSION_base(4,9,0)
 import Data.Semigroup((<>))
-#endif
-#if MIN_VERSION_base(4,9,0)
-import Data.List.NonEmpty(NonEmpty((:|)), (<|))
 #endif
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the left side of the tuple.
@@ -56,6 +59,21 @@ class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 → 𝐮𝐯, 𝐮 𝐮𝐯 →
     → 𝐯  -- ^ The second tuple to append.
     → 𝐮𝐯  -- ^ A tuple that contains the items of the first and the second tuple.
 
+class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f 𝐮 -> f𝐮 where
+  sequenceTupleA :: f𝐮 -> f 𝐮
+  default sequenceTupleA :: (Traversable t, 𝐮 ~ t b, f𝐮 ~ t (f b)) => f𝐮 -> f 𝐮
+  sequenceTupleA = sequenceA
+  sequenceTupleA_ :: f𝐮 -> f ()
+  sequenceTupleA_ x = sequenceTupleA x *> pure ()
+  {-# MINIMAL sequenceTupleA #-}
+
+-- instance Applicative f => SequenceTuple f (f a1, f a2) (a1, a2) where
+--   sequenceTupleA (f1, f2) = (,) <$> f1 <*> f2
+
+instance Applicative f => SequenceTuple f [f a] [a] where
+  sequenceTupleA = sequenceA
+  sequenceTupleA_ = sequenceA_
+
 instance TupleAddL x [x] [x] where
   (<++) = (:)
 
@@ -74,4 +92,8 @@ instance TupleAddR (NonEmpty x) x (NonEmpty x) where
 
 instance TupleAppend (NonEmpty x) (NonEmpty x) (NonEmpty x) where
   (+++) = (<>)
+
+instance Applicative f => SequenceTuple f (NonEmpty (f a)) (NonEmpty a) where
+  sequenceTupleA = sequenceA
+  sequenceTupleA_ = sequenceA_
 #endif

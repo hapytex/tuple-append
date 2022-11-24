@@ -16,10 +16,13 @@ module Data.Tuple.Append(
     TupleAddL((<++)), TupleAddR((++>))
     -- * Append two tuples
   , TupleAppend((+++))
+    -- * Sequence a tuple
+  , SequenceTuple(sequenceTupleA, sequenceTupleA_)
   ) where
 
-import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)))
-import Data.Tuple.Append.TemplateHaskell(defineTupleAddUpto, defineTupleAppendUpto)
+import Data.Tuple.Append.Class(TupleAddL((<++)), TupleAddR((++>)), TupleAppend((+++)), SequenceTuple(sequenceTupleA, sequenceTupleA_))
+import Data.Tuple.Append.TemplateHaskell(defineTupleAddUpto, defineTupleAppendUpto, defineSequenceTupleUpTo)
 
 [defineTupleAddUpto|61|]
 [defineTupleAppendUpto|19|]
+[defineSequenceTupleUpTo|61|]
