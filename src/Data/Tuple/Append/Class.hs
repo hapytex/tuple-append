@@ -26,6 +26,7 @@ import Data.List.NonEmpty(NonEmpty((:|)), (<|))
 #elif MIN_VERSION_base(4,9,0)
 import Data.Semigroup((<>))
 #endif
+import Data.Functor(($>))
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the left side of the tuple.
 -- The typeclass is also used for a small amount of extra datatypes to make it more convenient.
@@ -63,27 +64,27 @@ class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 → 𝐮𝐯, 𝐮 𝐮𝐯 →
 -- has a 'sequenceA' function, that function sees the tuples as a collection of /one/ element: the second item.
 -- This 'SequenceTuple' typeclass considers this a collection of /n/ elements for an /n/-tuple and thus
 -- runs over all elements of the tuple.
-class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f 𝐮 -> f𝐮 where
+class Applicative f ⇒ SequenceTuple f f𝐮 𝐮 | f𝐮 → f 𝐮, f 𝐮 → f𝐮 where
   -- | Sequence the elements of the tuple. For an /n/ tuple @sequenceTupleA (v₁, v₂, …, vₙ)@ is equivalent to:
   -- @(,,…,) <$> v₁ <*> v₂ <*> … <*> vₙ@.
   sequenceTupleA
-    :: f𝐮  -- ^ The tuple with applicative elements.
-    -> f 𝐮  -- ^ An applicative tuple thas has sequenced over the elements of the tuple.
-  default sequenceTupleA :: (Traversable t, 𝐮 ~ t b, f𝐮 ~ t (f b)) => f𝐮 -> f 𝐮
+    ∷ f𝐮  -- ^ The tuple with applicative elements.
+    → f 𝐮  -- ^ An applicative tuple thas has sequenced over the elements of the tuple.
+  default sequenceTupleA ∷ (Traversable t, 𝐮 ~ t b, f𝐮 ~ t (f b)) ⇒ f𝐮 → f 𝐮
   sequenceTupleA = sequenceA
 
   -- | Sequence the elements of the tuple, and return the unit. For an /n/ tuple @sequenceTupleA_ (v₁, v₂, …, vₙ)@
   -- is equivalent to: @v₁ *> (v₂ *> (… *> (vₙ *> pure ())))@.
   sequenceTupleA_
-    :: f𝐮  -- ^ The tuple of applicatives to sequence.
-    -> f ()  -- ^ An applicative for the unit type.
-  sequenceTupleA_ x = sequenceTupleA x *> pure ()
+    ∷ f𝐮  -- ^ The tuple of applicatives to sequence.
+    → f ()  -- ^ An applicative for the unit type.
+  sequenceTupleA_ x = sequenceTupleA x $> ()
   {-# MINIMAL sequenceTupleA #-}
 
--- instance Applicative f => SequenceTuple f (f a1, f a2) (a1, a2) where
+-- instance Applicative f ⇒ SequenceTuple f (f a1, f a2) (a1, a2) where
 --   sequenceTupleA (f1, f2) = (,) <$> f1 <*> f2
 
-instance Applicative f => SequenceTuple f [f a] [a] where
+instance Applicative f ⇒ SequenceTuple f [f a] [a] where
   sequenceTupleA = sequenceA
   sequenceTupleA_ = sequenceA_
 
@@ -106,7 +107,7 @@ instance TupleAddR (NonEmpty x) x (NonEmpty x) where
 instance TupleAppend (NonEmpty x) (NonEmpty x) (NonEmpty x) where
   (+++) = (<>)
 
-instance Applicative f => SequenceTuple f (NonEmpty (f a)) (NonEmpty a) where
+instance Applicative f ⇒ SequenceTuple f (NonEmpty (f a)) (NonEmpty a) where
   sequenceTupleA = sequenceA
   sequenceTupleA_ = sequenceA_
 #endif

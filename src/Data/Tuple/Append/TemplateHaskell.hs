@@ -69,7 +69,7 @@ _vNames = _varNames 'v'
 _tupleVar' ∷ Int → [Name] → Type
 _tupleVar' n ns = foldl AppT (TupleT n) (map VarT (take n ns))
 
-_tupleVar'' :: Int -> Type -> [Name] -> Type
+_tupleVar'' ∷ Int → Type → [Name] → Type
 _tupleVar'' n f ns = foldl AppT (TupleT n) (map ((f `AppT`) . VarT) (take n ns))
 
 _utupleVar' ∷ Int → [Name] → Type
@@ -110,20 +110,20 @@ _tupleB' f = NormalB . f . map VarE
 _clause ∷ [Pat] → Body → Name → Dec
 _clause ps b = (`FunD` [Clause ps b []])
 
-sequenceExprA :: Int -> [Name] -> Exp
+sequenceExprA ∷ Int → [Name] → Exp
 sequenceExprA n xs = foldl (flip ($)) (ConE (tupleDataName n)) exps'
-  where exps = map (AppE . VarE) ('(<$>) : repeat '(<*>)) :: [Exp -> Exp]
-        exps' = zipWith (\f x y -> f y `AppE` VarE x) exps xs :: [Exp -> Exp]
+  where exps = map (AppE . VarE) ('(<$>) : repeat '(<*>)) ∷ [Exp → Exp]
+        exps' = zipWith (\f x y → f y `AppE` VarE x) exps xs ∷ [Exp → Exp]
 
-sequenceExprA_ :: [Name] -> Exp
-sequenceExprA_ = foldr (AppE . AppE (VarE '(*>))) (VarE 'pure `AppE` ConE '()) . map VarE
+sequenceExprA_ ∷ [Name] → Exp
+sequenceExprA_ = foldr ((AppE . AppE (VarE '(*>))) . VarE) (VarE 'pure `AppE` ConE '())
 
 sequenceClauseA ∷ Int → Dec
-sequenceClauseA n = _clause [ _tupleP'' TupP vn] (NormalB (sequenceExprA n vn)) 'sequenceTupleA
+sequenceClauseA n = _clause [ _tupleP' vn] (NormalB (sequenceExprA n vn)) 'sequenceTupleA
   where vn = take n _vNames
 
 sequenceClauseA_ ∷ Int → Dec
-sequenceClauseA_ n = _clause [ _tupleP'' TupP vn] (NormalB (sequenceExprA_ vn)) 'sequenceTupleA_
+sequenceClauseA_ n = _clause [ _tupleP' vn] (NormalB (sequenceExprA_ vn)) 'sequenceTupleA_
   where vn = take n _vNames
 
 #if MIN_VERSION_template_haskell(2,16,0)
@@ -157,7 +157,7 @@ boxedAppendClause
   → Int  -- ^ The number of items for the second boxed tuple parameter.
   → Name  -- ^ The name of the function to define.
   → Dec  -- ^ A function declaration that only contains the body of the function.
-boxedAppendClause = _appendClause TupP TupE
+boxedAppendClause = _appendClause (TildeP . TupP) TupE
 
 -- | Create a function declaration to append two unboxed tuples together in a new unboxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
 unboxedAppendClause
@@ -172,7 +172,7 @@ boxedAddLClause
   ∷ Int  -- ^ The number of items of the boxed tuple to add an item to.
   → Name  -- ^ The name of the function to define.
   → Dec  -- ^ A function declaration that only contains the body of the function.
-boxedAddLClause = _addLClause TupP TupE
+boxedAddLClause = _addLClause (TildeP . TupP) TupE
 
 -- | Create a function declaration to add an item to the left side of an unboxed tuple in a new unboxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
 unboxedAddLClause
@@ -186,7 +186,7 @@ boxedAddRClause
   ∷ Int  -- ^ The number of items of the boxed tuple to add an item to.
   → Name  -- ^ The name of the function to define.
   → Dec  -- ^ A function declaration that only contains the body of the function.
-boxedAddRClause = _addRClause TupP TupE
+boxedAddRClause = _addRClause (TildeP . TupP) TupE
 
 -- | Create a function declaration to add an item to the right side of an unboxed tuple in a new unboxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
 unboxedAddRClause
@@ -328,8 +328,8 @@ makeUnboxedTupleAddRFun
 makeUnboxedTupleAddRFun nm ts = pure . unboxedTupleAddRFun nm ts
 
 
-_simpleInstance'' ∷ Cxt -> Name -> Type → Type → Type → [Dec] → Dec
-_simpleInstance'' cxt tc tca tcb tcc dfs = InstanceD Nothing cxt (ConT tc `AppT` tca `AppT` tcb `AppT` tcc) dfs
+_simpleInstance'' ∷ Cxt → Name → Type → Type → Type → [Dec] → Dec
+_simpleInstance'' cxt tc tca tcb tcc = InstanceD Nothing cxt (ConT tc `AppT` tca `AppT` tcb `AppT` tcc)
 
 _simpleInstance' ∷ Name → Type → Type → Type → [Dec] → Dec
 _simpleInstance' = _simpleInstance'' []
@@ -349,12 +349,12 @@ _simpleInstanceAddL = _simpleInstance ''TupleAddL '(<++)
 _simpleInstanceAddR ∷ Type → Type → Type → (Name → Dec) → Dec
 _simpleInstanceAddR = _simpleInstance ''TupleAddR '(++>)
 
-_simpleSequenceInstance :: Type -> Type -> [Dec] -> Dec
+_simpleSequenceInstance ∷ Type → Type → [Dec] → Dec
 _simpleSequenceInstance = _simpleInstance'' [ConT ''Prelude.Applicative `AppT` _varFF] ''SequenceTuple _varFF
 
 sequenceTuple
-  :: Int
-  -> Dec
+  ∷ Int
+  → Dec
 sequenceTuple n = _simpleSequenceInstance (_tupleVar'' n _varFF _vNames) (_tupleVar' n _vNames) [sequenceClauseA n, sequenceClauseA_ n]
 
 -- | Define a typeclass instance for 'TupleAppend' where it appens tuples with /m/ and /n/ items with /m/ and /n/ the parameters of the function.
@@ -372,8 +372,8 @@ tupleAppendFor l = [tupleAppend m n | m ← _tupleRange l, let n = l - m, _tuple
 
 -- | Define a typeclass instance for the 'SequenceTuple' typeclass that will sequence over a tuple for the given length.
 sequenceTupleFor
-  :: Int  -- ^ The given number /n/ that specifies the *arity* of the tuple for which to construct an instance. Will return an empty list of the number is invalid.
-  -> [Dec]  -- ^ A list of typeclass instances for the 'SequenceTuple' typeclass.
+  ∷ Int  -- ^ The given number /n/ that specifies the *arity* of the tuple for which to construct an instance. Will return an empty list of the number is invalid.
+  → [Dec]  -- ^ A list of typeclass instances for the 'SequenceTuple' typeclass.
 sequenceTupleFor n = [sequenceTuple n | _tupleCheck n]
 
 -- | Define a typeclass instance for 'TupleAddL' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left side.
@@ -415,7 +415,7 @@ defineTupleAppendUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQu
 
 -- | A 'QuasiQuoter' that constructs instances for the 'SequenceTuple' typeclass for tuples up to a length /n/ where /n/ i read as text input for the quasi quoter. For a single /n/ it will thus construct /n/ instances in total.
 defineSequenceTupleUpTo
-  :: QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
+  ∷ QuasiQuoter  -- ^ A 'QuasiQuoter' that will construct typeclass instance declarations.
 defineSequenceTupleUpTo = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (sequenceTupleFor <=< enumFromTo 1 . read))
 
 -- | A 'QuasiQuoter' that constructs function declarations with the name @unboxedAppend_i_j@ with /i/ and /j/ the number of items of the unboxed tuples. The items sum up to at most /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it thus will construct /n+1/ instances for each tuple length.
