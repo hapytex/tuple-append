@@ -1,4 +1,7 @@
-{-# LANGUAGE CPP, MagicHash, TemplateHaskell, UnboxedTuples #-}
+{-# LANGUAGE CPP #-}
+{-# LANGUAGE MagicHash #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE UnboxedTuples #-}
 {-# OPTIONS_GHC -fobject-code #-}
 
 module Data.Tuple.Append.Example where
