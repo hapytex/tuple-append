@@ -64,7 +64,7 @@ class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 → 𝐮𝐯, 𝐮 𝐮𝐯 →
 -- has a 'sequenceA' function, that function sees the tuples as a collection of /one/ element: the second item.
 -- This 'SequenceTuple' typeclass considers this a collection of /n/ elements for an /n/-tuple and thus
 -- runs over all elements of the tuple.
-class Applicative f ⇒ SequenceTuple f f𝐮 𝐮 | f𝐮 → f 𝐮, f f𝐮 -> 𝐮, f 𝐮 → f𝐮 where
+class Applicative f ⇒ SequenceTuple f f𝐮 𝐮 | f𝐮 → f 𝐮, f f𝐮 → 𝐮, f 𝐮 → f𝐮 where
   -- | Sequence the elements of the tuple. For an /n/ tuple @sequenceTupleA (v₁, v₂, …, vₙ)@ is equivalent to:
   -- @(,,…,) <$> v₁ <*> v₂ <*> … <*> vₙ@.
   sequenceTupleA

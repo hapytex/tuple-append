@@ -17,13 +17,13 @@ deriving instance Eq a ⇒ Eq (Solo a)
 toAdd ∷ Int
 toAdd = 1
 
-tw :: Int
+tw ∷ Int
 tw = 2
 
 th ∷ Int
 th = 3
 
-fv :: Int
+fv ∷ Int
 fv = 5
 
 spec ∷ Spec
@@ -89,12 +89,12 @@ spec = do
 #if MIN_VERSION_ghc_prim(0,7,0)
     describe "1-tuple" $ do
       it "Maybe-1" (sequenceTupleA (Solo (Just th)) `shouldBe` Just (Solo th))
-      it "Maybe-2" (sequenceTupleA (Solo (Nothing :: Maybe Int)) `shouldBe` Nothing)
-      it "Either-1" (sequenceTupleA (Solo (Left "a" :: Either String Int)) `shouldBe` Left "a")
-      it "Either-2" (sequenceTupleA (Solo (Right th :: Either String Int)) `shouldBe` Right (Solo th))
+      it "Maybe-2" (sequenceTupleA (Solo (Nothing ∷ Maybe Int)) `shouldBe` Nothing)
+      it "Either-1" (sequenceTupleA (Solo (Left "a" ∷ Either String Int)) `shouldBe` Left "a")
+      it "Either-2" (sequenceTupleA (Solo (Right th ∷ Either String Int)) `shouldBe` Right (Solo th))
 #endif
     describe "2-tuple" $ do
       it "Maybe-1" (sequenceTupleA (Just th, Just fv) `shouldBe` Just (th, fv))
-      it "Maybe-2" (sequenceTupleA (Nothing :: Maybe Int, Just fv) `shouldBe` Nothing)
-      it "Either-1" (sequenceTupleA (Left "a" :: Either String String, Right tw :: Either String Int) `shouldBe` Left "a")
-      it "Either-2" (sequenceTupleA (Right th :: Either String Int, Right fv) `shouldBe` Right (th, fv))
+      it "Maybe-2" (sequenceTupleA (Nothing ∷ Maybe Int, Just fv) `shouldBe` Nothing)
+      it "Either-1" (sequenceTupleA (Left "a" ∷ Either String String, Right tw ∷ Either String Int) `shouldBe` Left "a")
+      it "Either-2" (sequenceTupleA (Right th ∷ Either String Int, Right fv) `shouldBe` Right (th, fv))
