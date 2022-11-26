@@ -38,43 +38,43 @@ import Data.Functor (($>))
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the left side of the tuple.
 -- The typeclass is also used for a small amount of extra datatypes to make it more convenient.
-class TupleAddL x 𝐯 x𝐯 | x 𝐯 -> x𝐯, x𝐯 -> x, x𝐯 -> 𝐯 where
+class TupleAddL x 𝐯 x𝐯 | x 𝐯 → x𝐯, x𝐯 → x, x𝐯 → 𝐯 where
   infixr 5 <++
 
   -- | Construct a new tuple by adding the first parameter as first item in the tuple.
-  (<++) ::
+  (<++) ∷
     -- | The item to prepend at the left side of the tuple.
-    x ->
+    x →
     -- | The tuple containing the rest of the elements.
-    𝐯 ->
+    𝐯 →
     -- | A tuple that has one element more than the given tuple: the given item that is prepended at the left side.
     x𝐯
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the right side of the tuple.
 -- The typeclass is also used for a small amount of extra data types to make it more convenient.
-class TupleAddR 𝐯 x 𝐯x | 𝐯 x -> 𝐯x, 𝐯x -> 𝐯, 𝐯x -> x where
+class TupleAddR 𝐯 x 𝐯x | 𝐯 x → 𝐯x, 𝐯x → 𝐯, 𝐯x → x where
   infixl 5 ++>
 
   -- | Construct a new tuple by adding the second parameter as last item in the tuple.
-  (++>) ::
+  (++>) ∷
     -- | The tuple containing the rest of the elements.
-    𝐯 ->
+    𝐯 →
     -- | The item to append at the right side of the tuple.
-    x ->
+    x →
     -- | A tuple that has one element more than the given tuple: the given item that is appended at the right side.
     𝐯x
 
 -- | A typeclass mainly used to append two tuples together into a tuple that contains as many elements as the sum of the number of
 -- elements of the two given tuples. The typeclass is also used for a small amount of extra data types to make it more convenient.
-class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 -> 𝐮𝐯, 𝐮 𝐮𝐯 -> 𝐯, 𝐯 𝐮𝐯 -> 𝐮 where
+class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 → 𝐮𝐯, 𝐮 𝐮𝐯 → 𝐯, 𝐯 𝐮𝐯 → 𝐮 where
   infixr 5 +++
 
   -- | Construct a new tuple that contains the elements of the two given tuples.
-  (+++) ::
+  (+++) ∷
     -- | The first tuple to append.
-    𝐮 ->
+    𝐮 →
     -- | The second tuple to append.
-    𝐯 ->
+    𝐯 →
     -- | A tuple that contains the items of the first and the second tuple.
     𝐮𝐯
 
@@ -82,22 +82,22 @@ class TupleAppend 𝐮 𝐯 𝐮𝐯 | 𝐮 𝐯 -> 𝐮𝐯, 𝐮 𝐮𝐯 -> �
 -- has a 'sequenceA' function, that function sees the tuples as a collection of /one/ element: the second item.
 -- This 'SequenceTuple' typeclass considers this a collection of /n/ elements for an /n/-tuple and thus
 -- runs over all elements of the tuple.
-class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f f𝐮 -> 𝐮, f 𝐮 -> f𝐮 where
+class Applicative f ⇒ SequenceTuple f f𝐮 𝐮 | f𝐮 → f 𝐮, f f𝐮 → 𝐮, f 𝐮 → f𝐮 where
   -- | Sequence the elements of the tuple. For an /n/ tuple @sequenceTupleA (v₁, v₂, …, vₙ)@ is equivalent to:
   -- @(,,…,) <$> v₁ <*> v₂ <*> … <*> vₙ@.
-  sequenceTupleA ::
+  sequenceTupleA ∷
     -- | The tuple with applicative elements.
-    f𝐮 ->
+    f𝐮 →
     -- | An applicative tuple thas has sequenced over the elements of the tuple.
     f 𝐮
-  default sequenceTupleA :: (Traversable t, 𝐮 ~ t b, f𝐮 ~ t (f b)) => f𝐮 -> f 𝐮
+  default sequenceTupleA ∷ (Traversable t, 𝐮 ~ t b, f𝐮 ~ t (f b)) ⇒ f𝐮 → f 𝐮
   sequenceTupleA = sequenceA
 
   -- | Sequence the elements of the tuple, and return the unit. For an /n/ tuple @sequenceTupleA_ (v₁, v₂, …, vₙ)@
   -- is equivalent to: @v₁ *> (v₂ *> (… *> (vₙ *> pure ())))@.
-  sequenceTupleA_ ::
+  sequenceTupleA_ ∷
     -- | The tuple of applicatives to sequence.
-    f𝐮 ->
+    f𝐮 →
     -- | An applicative for the unit type.
     f ()
   sequenceTupleA_ x = sequenceTupleA x $> ()
@@ -107,7 +107,7 @@ class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f f𝐮 -> 
 -- instance Applicative f ⇒ SequenceTuple f (f a1, f a2) (a1, a2) where
 --   sequenceTupleA (f1, f2) = (,) <$> f1 <*> f2
 
-instance Applicative f => SequenceTuple f [f a] [a] where
+instance Applicative f ⇒ SequenceTuple f [f a] [a] where
   sequenceTupleA = sequenceA
   sequenceTupleA_ = sequenceA_
 
