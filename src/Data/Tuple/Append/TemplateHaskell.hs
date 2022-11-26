@@ -1,6 +1,7 @@
 {-# LANGUAGE CPP #-}
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE TemplateHaskellQuotes #-}
+{-# LANGUAGE UnicodeSyntax #-}
 
 -- |
 -- Module      : Data.Tuple.Append.TemplateHaskell
