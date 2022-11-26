@@ -16,7 +16,7 @@ module Data.Tuple.Append.TemplateHaskell (
     -- * Quasiquoters for unboxed tuples
   , defineUnboxedTupleAppendFunctionsUpto
     -- * Functions to construct typeclass instance declarations
-  , tupleAddL, tupleAddR, tupleAdd, tupleAppend, tupleAppendFor
+  , tupleAddL, tupleAddR, tupleAdd, tupleAppend, tupleAppendFor, sequenceTuple, sequenceTupleFor
     -- * Function declarations
   , boxedTupleAddLFun, boxedTupleAddRFun, boxedTupleAppendFun
   , unboxedTupleAddLFun, unboxedTupleAddRFun, unboxedTupleAppendFun
@@ -110,27 +110,28 @@ _tupleB' f = NormalB . f . map VarE
 _clause ∷ [Pat] → Body → Name → Dec
 _clause ps b = (`FunD` [Clause ps b []])
 
-sequenceExprA ∷ Int → [Name] → Exp
-sequenceExprA n xs = foldl (flip ($)) (ConE (tupleDataName n)) exps'
+_sequenceExprA ∷ Int → [Name] → Exp
+_sequenceExprA n xs = foldl (flip ($)) (ConE (tupleDataName n)) exps'
   where exps = map (AppE . VarE) ('(<$>) : repeat '(<*>)) ∷ [Exp → Exp]
         exps' = zipWith (\f x y → f y `AppE` VarE x) exps xs ∷ [Exp → Exp]
 
-sequenceExprA_ ∷ [Name] → Exp
-sequenceExprA_ = foldr ((AppE . AppE (VarE '(*>))) . VarE) (VarE 'pure `AppE` ConE '())
+_sequenceExprA_ ∷ [Name] → Exp
+_sequenceExprA_ = foldr ((AppE . AppE (VarE '(*>))) . VarE) (VarE 'pure `AppE` ConE '())
 
 -- | Produce a function for sequencing a tuple of a given length of tuples with a given name.
 sequenceClauseA
   ∷ Int  -- ^ The given number /n/ for which a function is produced that sequences /n/-tuples.
-  -> Name  -- ^ The name for the function that is generated.
+  → Name  -- ^ The name for the function that is generated.
   → Dec  -- ^ A declaration for a function that sequences the tuple.
-sequenceClauseA n = _clause [ _tupleP' vn] (NormalB (sequenceExprA n vn))
+sequenceClauseA n = _clause [ _tupleP' vn] (NormalB (_sequenceExprA n vn))
   where vn = take n _vNames
 
+-- | Produce a function for sequencing a tuple of a given length of tuples and return the unit value with a given name.
 sequenceClauseA_
   ∷ Int  -- ^ The given number /n/ for which a function is produced that sequences /n/-tuples.
-  -> Name  -- ^ The name for the function that is generated.
+  → Name  -- ^ The name for the function that is generated.
   → Dec  -- ^ A declaration for a function that sequences the tuple and returns the unit value.
-sequenceClauseA_ n = _clause [ _tupleP' vn] (NormalB (sequenceExprA_ vn))
+sequenceClauseA_ n = _clause [ _tupleP' vn] (NormalB (_sequenceExprA_ vn))
   where vn = take n _vNames
 
 #if MIN_VERSION_template_haskell(2,16,0)
@@ -359,12 +360,13 @@ _simpleInstanceAddR = _simpleInstance ''TupleAddR '(++>)
 _simpleSequenceInstance ∷ Type → Type → [Dec] → Dec
 _simpleSequenceInstance = _simpleInstance'' [ConT ''Prelude.Applicative `AppT` _varFF] ''SequenceTuple _varFF
 
+-- | Define a typeclass instance for 'SequenceTuple' where it sequences a tuple of length /n/.
 sequenceTuple
-  ∷ Int
-  → Dec
+  ∷ Int  -- ^ The given length /n/ for the tuple to be sequenced.
+  → Dec  -- ^ The instance declaraion for that tuple.
 sequenceTuple n = _simpleSequenceInstance (_tupleVar'' n _varFF _vNames) (_tupleVar' n _vNames) [sequenceClauseA n 'sequenceTupleA, sequenceClauseA_ n 'sequenceTupleA_]
 
--- | Define a typeclass instance for 'TupleAppend' where it appens tuples with /m/ and /n/ items with /m/ and /n/ the parameters of the function.
+-- | Define a typeclass instance for 'TupleAppend' where it appends tuples with /m/ and /n/ items with /m/ and /n/ the parameters of the function.
 tupleAppend
   ∷ Int  -- ^ The length /m/ of the first tuple.
   → Int  -- ^ The length /n/ of the second tuple.
