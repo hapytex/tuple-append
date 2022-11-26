@@ -25,4 +25,4 @@ import Data.Tuple.Append.TemplateHaskell(defineTupleAddUpto, defineTupleAppendUp
 
 [defineTupleAddUpto|61|]
 [defineTupleAppendUpto|19|]
-[defineSequenceTupleUpTo|61|]
+[defineSequenceTupleUpTo|62|]
