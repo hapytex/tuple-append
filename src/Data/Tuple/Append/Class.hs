@@ -4,7 +4,6 @@
 {-# LANGUAGE FunctionalDependencies #-}
 {-# LANGUAGE Safe #-}
 {-# LANGUAGE TypeFamilies #-}
-{-# LANGUAGE UnicodeSyntax #-}
 
 -- |
 -- Module      : Data.Tuple.Append.Class
