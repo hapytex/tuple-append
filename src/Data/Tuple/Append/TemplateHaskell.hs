@@ -61,10 +61,7 @@ module Data.Tuple.Append.TemplateHaskell (
     unboxedAppendClause,
 ) where
 
-#if MIN_VERSION_base(4,8,0)
-#else
 import Data.Monoid((<>))
-#endif
 import Control.Monad ((<=<))
 import Data.Char (chr, ord)
 import Data.Tuple.Append.Class (FoldTuple (foldMapTuple, foldlTuple, foldrTuple), SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)))
