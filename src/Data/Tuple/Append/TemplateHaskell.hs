@@ -62,7 +62,9 @@ module Data.Tuple.Append.TemplateHaskell (
 ) where
 
 import Data.Monoid((<>))
+#if !MIN_VERSION_base(4,8,0)
 import Control.Monad ((<=<))
+#endif
 import Data.Char (chr, ord)
 import Data.Tuple.Append.Class (FoldTuple (foldMapTuple, foldlTuple, foldrTuple), SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)))
 import Language.Haskell.TH.Lib (DecsQ)
