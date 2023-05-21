@@ -23,10 +23,14 @@ module Data.Tuple.Append.Class
 
     -- * Lifting tuples of applicatives
     SequenceTuple (sequenceTupleA, sequenceTupleA_),
+
+    -- * Folding elements in a tuple
+    TupleFold(foldlTuple, foldrTuple, foldMapTuple)
   )
 where
 
 import Data.Foldable (sequenceA_)
+import Data.Functor (($>))
 #if MIN_VERSION_base(4,9,0)
 import Data.List.NonEmpty(NonEmpty((:|)), (<|))
 #endif
@@ -34,7 +38,7 @@ import Data.List.NonEmpty(NonEmpty((:|)), (<|))
 #elif MIN_VERSION_base(4,9,0)
 import Data.Semigroup((<>))
 #endif
-import Data.Functor (($>))
+import Data.Monoid(Dual(Dual, getDual), Endo(Endo, appEndo))
 
 -- | A typeclass mainly used to construct a tuple with one element extra. That element is added at the left side of the tuple.
 -- The typeclass is also used for a small amount of extra datatypes to make it more convenient.
@@ -104,12 +108,62 @@ class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f f𝐮 -> 
 
   {-# MINIMAL sequenceTupleA #-}
 
--- instance Applicative f ⇒ SequenceTuple f (f a1, f a2) (a1, a2) where
---   sequenceTupleA (f1, f2) = (,) <$> f1 <*> f2
+class TupleFold v 𝐯 | 𝐯 -> v where
+  -- | Fold any tuple left-to-right with the given folding function that folds a second element, the first value for the
+  -- accumulator and the tuple to fold, so:
+  --
+  -- @foldlTuple f z (v₁, v₂, …, vₙ) == (…((z `f` v₁) `f` v₂) `f` …) `f` vₙ@
+  --
+  foldlTuple ::
+    -- | The "folding function" that takes the acculator thus far and an element from the tuple, and produces a new accumulator.
+    (a -> v -> a) ->
+    -- | The initial value for the accumulator to use.
+    a ->
+    -- | The tuple that we "fold".
+    𝐯 ->
+    -- | The result of the folding process.
+    a
+  foldlTuple f z t = appEndo (getDual (foldMapTuple (Dual . Endo . flip f) t)) z
+
+  -- | Fold any tuple right-to-left with the given folding function that folds a second element, the first value for the
+  -- accumulator  and the tuple to fold, so:
+  --
+  -- @foldrTuple f z (v₁, v₂, …, vₙ) == f v₁ (f v₂ (… (f vₙ z) …)))@
+  --
+  foldrTuple ::
+    -- | The "folding function" that takes an element from the tuple, the accumulator, and produces a new accumulator.
+    (v -> a -> a) ->
+    -- | The initial value for the accumulator to use.
+    a ->
+    -- | The tuple that we "fold".
+    𝐯 ->
+    -- | The result of the folding process.
+    a
+  foldrTuple f z t = appEndo (foldMapTuple (Endo . f) t) z
+
+  -- | Map the items in the tuple to a value of a 'Monoid' type and then fold these through the 'Monoid' instance.
+  --
+  -- @foldMapTuple f z (v₁, v₂, …, vₙ) == f v₁ <> (f v₂ <> (… (f vₙ <> mempty) …)))@
+  --
+  foldMapTuple :: Monoid m =>
+    -- | The mapping function that maps the elements of the tuple to a value of a 'Monoid' type.
+    (v -> m) ->
+    -- | The tuple to "fold".
+    𝐯 ->
+    -- | The result of the folding process.
+    m
+  foldMapTuple f = foldrTuple (mappend . f) mempty
+
+  {-# MINIMAL foldMapTuple | foldrTuple #-}
 
 instance Applicative f => SequenceTuple f [f a] [a] where
   sequenceTupleA = sequenceA
   sequenceTupleA_ = sequenceA_
+
+instance TupleFold x [x] where
+  foldlTuple = foldl
+  foldrTuple = foldr
+  foldMapTuple = foldMap
 
 instance TupleAddL x [x] [x] where
   (<++) = (:)
@@ -133,4 +187,9 @@ instance TupleAppend (NonEmpty x) (NonEmpty x) (NonEmpty x) where
 instance Applicative f => SequenceTuple f (NonEmpty (f a)) (NonEmpty a) where
   sequenceTupleA = sequenceA
   sequenceTupleA_ = sequenceA_
+
+instance TupleFold x (NonEmpty x) where
+  foldlTuple = foldl
+  foldrTuple = foldr
+  foldMapTuple = foldMap
 #endif
