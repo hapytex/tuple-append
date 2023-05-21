@@ -63,7 +63,7 @@ where
 
 import Control.Monad ((<=<))
 import Data.Char (chr, ord)
-#if !MIN_VERSION_base(4,8,0)
+#if !MIN_VERSION_base(4,11,0)
 import Data.Monoid ((<>))
 #endif
 import Data.Tuple.Append.Class (FoldTuple (foldMapTuple, foldlTuple, foldrTuple), SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)))
