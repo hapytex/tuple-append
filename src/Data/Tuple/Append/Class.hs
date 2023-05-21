@@ -108,6 +108,9 @@ class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f f𝐮 -> 
 
   {-# MINIMAL sequenceTupleA #-}
 
+-- | A typeclass to fold a tuple of an arbitrary length. It thus implements the equivalent of 'foldl', 'foldr' and 'foldMap' on tuples,
+-- like it would have done on a list with an equivalent length. This can only be done if the type of all the elements of the tuple is the same.
+-- The @v@ type variable is type of the items of the tuple, whereas @𝐯@ is the type of the tuple.
 class FoldTuple v 𝐯 | 𝐯 -> v where
   -- | Fold any tuple left-to-right with the given folding function that folds a second element, the first value for the
   -- accumulator and the tuple to fold, so:
