@@ -65,12 +65,10 @@ jobs:
     name: Code formatter
     runs-on: ubuntu-latest
     steps:
-    - name: add ppa
-      run: sudo add-apt-repository -y ppa:hvr/ghc
     - name: update package database
       run: sudo apt-get update
     - name: install required packages
-      run: sudo apt-get install cabal-install-3.0 haskell-stack libimage-exiftool-perl qpdf
+      run: sudo apt-get install cabal-install-3.0 haskell-stack ormolu libimage-exiftool-perl qpdf
     - name: checkout code
       uses: actions/checkout@v2.3.1
     - name: ormolu formatter
