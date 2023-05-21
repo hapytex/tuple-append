@@ -25,7 +25,7 @@ module Data.Tuple.Append.Class
     SequenceTuple (sequenceTupleA, sequenceTupleA_),
 
     -- * Folding elements in a tuple
-    TupleFold(foldlTuple, foldrTuple, foldMapTuple)
+    FoldTuple(foldlTuple, foldrTuple, foldMapTuple)
   )
 where
 
@@ -108,7 +108,7 @@ class Applicative f => SequenceTuple f f𝐮 𝐮 | f𝐮 -> f 𝐮, f f𝐮 -> 
 
   {-# MINIMAL sequenceTupleA #-}
 
-class TupleFold v 𝐯 | 𝐯 -> v where
+class FoldTuple v 𝐯 | 𝐯 -> v where
   -- | Fold any tuple left-to-right with the given folding function that folds a second element, the first value for the
   -- accumulator and the tuple to fold, so:
   --
@@ -160,7 +160,7 @@ instance Applicative f => SequenceTuple f [f a] [a] where
   sequenceTupleA = sequenceA
   sequenceTupleA_ = sequenceA_
 
-instance TupleFold x [x] where
+instance FoldTuple x [x] where
   foldlTuple = foldl
   foldrTuple = foldr
   foldMapTuple = foldMap
@@ -188,7 +188,7 @@ instance Applicative f => SequenceTuple f (NonEmpty (f a)) (NonEmpty a) where
   sequenceTupleA = sequenceA
   sequenceTupleA_ = sequenceA_
 
-instance TupleFold x (NonEmpty x) where
+instance FoldTuple x (NonEmpty x) where
   foldlTuple = foldl
   foldrTuple = foldr
   foldMapTuple = foldMap

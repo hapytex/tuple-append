@@ -63,7 +63,7 @@ where
 
 import Control.Monad ((<=<))
 import Data.Char (chr, ord)
-import Data.Tuple.Append.Class (SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)), TupleFold(foldMapTuple, foldlTuple, foldrTuple))
+import Data.Tuple.Append.Class (SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)), FoldTuple(foldMapTuple, foldlTuple, foldrTuple))
 import Language.Haskell.TH.Lib (DecsQ)
 import Language.Haskell.TH.Quote (QuasiQuoter (QuasiQuoter))
 import Language.Haskell.TH.Syntax
@@ -228,10 +228,10 @@ _foldRClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldr 
   where
     vars = take n _vNames
 
--- _foldMapClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
--- _foldMapClause fp n = _clause [_patFF, _tupleP'' fp vars] (foldr1 (\x₁ x₂ -> ConE '(<>) `AppE` x₁ `AppE` x₂) (map (AppE _expFF . VarE) vars))
---   where
---     vars = take n _vNames
+_foldMapClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
+_foldMapClause fp n = _clause [_patFF, _tupleP'' fp vars] (NormalB (foldr1 (\x₁ x₂ -> VarE '(<>) `AppE` x₁ `AppE` x₂) (map (AppE _expFF . VarE) vars)))
+  where
+    vars = take n _vNames
 
 
 -- | Create a function declaration to append two boxed tuples together in a new boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
@@ -310,13 +310,24 @@ boxedFoldLClause = _foldLClause (TildeP . TupP)
 
 -- | Create a function declaration to fold a boxed tuple right-to-left. This only contains a declaration for the /body/ of the function, not a type signature.
 boxedFoldRClause ::
-  -- | The number of items of the boxed tuple to add an item to.
+  -- | The number of items of the boxed tuple to fold.
   Int ->
   -- | The name of the function to define.
   Name ->
   -- | A function declaration that only contains the body of the function.
   Dec
 boxedFoldRClause = _foldRClause (TildeP . TupP)
+
+-- | Create a function declaration to 'foldMap' a boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+boxedFoldMapClause ::
+  -- | The number of items of the boxed tuple to 'foldMap'.
+  Int ->
+  -- | The name of the function to define.
+  Name ->
+  -- | A function declaration that only contains the body of the function.
+  Dec
+boxedFoldMapClause = _foldMapClause (TildeP . TupP)
+
 
 _tupleB :: [Name] -> Body
 _tupleB = _tupleB' TupE
@@ -520,7 +531,7 @@ _simpleInstanceAddR :: Type -> Type -> Type -> (Name -> Dec) -> Dec
 _simpleInstanceAddR = _simpleInstance ''TupleAddR '(++>)
 
 _simpleInstanceFold :: Type -> Type -> [Dec] -> Dec
-_simpleInstanceFold 𝐯 vₖ = InstanceD Nothing [] (ConT ''TupleFold `AppT` 𝐯 `AppT` vₖ)
+_simpleInstanceFold 𝐯 vₖ = InstanceD Nothing [] (ConT ''FoldTuple `AppT` 𝐯 `AppT` vₖ)
 
 _simpleSequenceInstance :: Type -> Type -> [Dec] -> Dec
 _simpleSequenceInstance = _simpleInstance'' [ConT ''Prelude.Applicative `AppT` _varFF] ''SequenceTuple _varFF
@@ -583,13 +594,13 @@ tupleAddR ::
   Dec
 tupleAddR n = _simpleInstanceAddR (_tupleVar' n _vNames) _varZZ (_tupleVar' (n + 1) (take n _vNames ++> _nameZZ)) (boxedAddRClause n)
 
--- | Define a typeclass instance for 'TupleFold' for a tuple with /n/ elements that is folded with an arbitrary "fold" function.
+-- | Define a typeclass instance for 'FoldTuple' for a tuple with /n/ elements that is folded with an arbitrary "fold" function.
 foldTuple ::
   -- | The given length /n/ of the tuples to fold.
   Int ->
-  -- | A type instance declaration for an instance of the 'TupleFold' typeclass for an /n/-tuple.
+  -- | A type instance declaration for an instance of the 'FoldTuple' typeclass for an /n/-tuple.
   Dec
-foldTuple n = _simpleInstanceFold _varZZ (_tupleVar' n (repeat _nameZZ)) [ boxedFoldLClause n 'foldlTuple, boxedFoldRClause n 'foldrTuple]
+foldTuple n = _simpleInstanceFold _varZZ (_tupleVar' n (repeat _nameZZ)) [ boxedFoldLClause n 'foldlTuple, boxedFoldRClause n 'foldrTuple, boxedFoldMapClause n 'foldMapTuple]
 
 
 -- | Define typeclass instances for 'TupleAddL' and 'TupleAddR' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left or the right side.
