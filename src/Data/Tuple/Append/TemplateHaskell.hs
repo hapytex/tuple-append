@@ -224,7 +224,7 @@ _foldLClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldl 
     vars = take n _vNames
 
 _foldRClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
-_foldRClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldr (\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) _expZZ (map VarE vars)))
+_foldRClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldr ((\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) . VarE) _expZZ vars))
   where
     vars = take n _vNames
 
