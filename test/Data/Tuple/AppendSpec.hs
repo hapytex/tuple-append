@@ -10,7 +10,7 @@ import GHC.Tuple(Solo(Solo))
 
 import Test.Hspec
 
-#if MIN_VERSION_ghc_prim(0,7,0) && !MIN_VERSION_base(4,15,0)
+#if MIN_VERSION_ghc_prim(0,7,0) && !MIN_VERSION_base(4,16,0)
 deriving instance Eq a ⇒ Eq (Solo a)
 #endif
 
