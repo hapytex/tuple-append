@@ -115,7 +115,7 @@ class FoldTuple v 𝐯 | 𝐯 -> v where
   -- | Fold any tuple left-to-right with the given folding function that folds a second element, the first value for the
   -- accumulator and the tuple to fold, so:
   --
-  -- @foldlTuple f z (v₁, v₂, …, vₙ) == (…((z `f` v₁) `f` v₂) `f` …) `f` vₙ@
+  -- @foldlTuple f z (v₁, v₂, …, vₙ) == f (… f (f (`f` z v₁) v₂) …) vₙ@
   foldlTuple ::
     -- | The "folding function" that takes the acculator thus far and an element from the tuple, and produces a new accumulator.
     (a -> v -> a) ->

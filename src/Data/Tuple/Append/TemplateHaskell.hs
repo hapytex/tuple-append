@@ -83,6 +83,12 @@ import Language.Haskell.TH.Syntax
     tupleDataName,
   )
 
+_nameVV :: Name
+_nameVV = mkName "v"
+
+_varVV :: Type
+_varVV = VarT _nameVV
+
 _nameZZ :: Name
 _nameZZ = mkName "x"
 
@@ -601,7 +607,7 @@ foldTuple ::
   Int ->
   -- | A type instance declaration for an instance of the 'FoldTuple' typeclass for an /n/-tuple.
   Dec
-foldTuple n = _simpleInstanceFold _varZZ (_tupleVar' n (repeat _nameZZ)) [boxedFoldLClause n 'foldlTuple, boxedFoldRClause n 'foldrTuple, boxedFoldMapClause n 'foldMapTuple]
+foldTuple n = _simpleInstanceFold _varVV (_tupleVar' n (repeat _nameVV)) [boxedFoldLClause n 'foldlTuple, boxedFoldRClause n 'foldrTuple, boxedFoldMapClause n 'foldMapTuple]
 
 -- | Define typeclass instances for 'TupleAddL' and 'TupleAddR' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left or the right side.
 tupleAdd ::
