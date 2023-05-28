@@ -28,6 +28,8 @@ module Data.Tuple.Append.TemplateHaskell
     tupleAppendFor,
     sequenceTuple,
     sequenceTupleFor,
+    foldTuple,
+    foldTupleFor,
 
     -- * Function declarations
     boxedTupleAddLFun,
@@ -53,6 +55,9 @@ module Data.Tuple.Append.TemplateHaskell
     boxedAppendClause,
     sequenceClauseA,
     sequenceClauseA_,
+    foldlClause,
+    foldrClause,
+    foldMapClause,
 
     -- ** Unboxed tuples
     unboxedAddLClause,
@@ -227,13 +232,13 @@ _addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++>
   where
     vars = take n _vNames
 
-_foldLClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
-_foldLClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldl (\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) _expZZ (map VarE vars)))
+_foldlClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
+_foldlClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldl (\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) _expZZ (map VarE vars)))
   where
     vars = take n _vNames
 
-_foldRClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
-_foldRClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldr ((\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) . VarE) _expZZ vars))
+_foldrClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
+_foldrClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldr ((\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) . VarE) _expZZ vars))
   where
     vars = take n _vNames
 
@@ -307,34 +312,34 @@ unboxedAddRClause ::
 unboxedAddRClause = _addRClause UnboxedTupP UnboxedTupE
 
 -- | Create a function declaration to fold a boxed tuple left-to-right. This only contains a declaration for the /body/ of the function, not a type signature.
-boxedFoldLClause ::
+foldlClause ::
   -- | The number of items of the boxed tuple to fold.
   Int ->
   -- | The name of the function to define.
   Name ->
   -- | A function declaration that only contains the body of the function.
   Dec
-boxedFoldLClause = _foldLClause (TildeP . TupP)
+foldlClause = _foldlClause (TildeP . TupP)
 
 -- | Create a function declaration to fold a boxed tuple right-to-left. This only contains a declaration for the /body/ of the function, not a type signature.
-boxedFoldRClause ::
+foldrClause ::
   -- | The number of items of the boxed tuple to fold.
   Int ->
   -- | The name of the function to define.
   Name ->
   -- | A function declaration that only contains the body of the function.
   Dec
-boxedFoldRClause = _foldRClause (TildeP . TupP)
+foldrClause = _foldrClause (TildeP . TupP)
 
 -- | Create a function declaration to 'foldMap' a boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
-boxedFoldMapClause ::
+foldMapClause ::
   -- | The number of items of the boxed tuple to 'foldMap'.
   Int ->
   -- | The name of the function to define.
   Name ->
   -- | A function declaration that only contains the body of the function.
   Dec
-boxedFoldMapClause = _foldMapClause (TildeP . TupP)
+foldMapClause = _foldMapClause (TildeP . TupP)
 
 _tupleB :: [Name] -> Body
 _tupleB = _tupleB' TupE
@@ -607,7 +612,7 @@ foldTuple ::
   Int ->
   -- | A type instance declaration for an instance of the 'FoldTuple' typeclass for an /n/-tuple.
   Dec
-foldTuple n = _simpleInstanceFold _varVV (_tupleVar' n (repeat _nameVV)) [boxedFoldLClause n 'foldlTuple, boxedFoldRClause n 'foldrTuple, boxedFoldMapClause n 'foldMapTuple]
+foldTuple n = _simpleInstanceFold _varVV (_tupleVar' n (repeat _nameVV)) [foldlClause n 'foldlTuple, foldrClause n 'foldrTuple, foldMapClause n 'foldMapTuple]
 
 -- | Define typeclass instances for 'TupleAddL' and 'TupleAddR' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left or the right side.
 tupleAdd ::
