@@ -22,14 +22,19 @@ module Data.Tuple.Append
 
     -- * Sequence a tuple
     SequenceTuple (sequenceTupleA, sequenceTupleA_),
+
+    -- * Folding a tuple
+    FoldTuple (foldlTuple, foldrTuple, foldMapTuple),
   )
 where
 
-import Data.Tuple.Append.Class (SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)))
-import Data.Tuple.Append.TemplateHaskell (defineSequenceTupleUpTo, defineTupleAddUpto, defineTupleAppendUpto)
+import Data.Tuple.Append.Class (FoldTuple (foldMapTuple, foldlTuple, foldrTuple), SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)))
+import Data.Tuple.Append.TemplateHaskell (defineFoldTupleUpTo, defineSequenceTupleUpTo, defineTupleAddUpto, defineTupleAppendUpto)
 
 [defineTupleAddUpto|61|]
 
 [defineTupleAppendUpto|19|]
 
 [defineSequenceTupleUpTo|62|]
+
+[defineFoldTupleUpTo|62|]

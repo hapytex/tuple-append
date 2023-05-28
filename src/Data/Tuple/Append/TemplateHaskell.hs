@@ -15,6 +15,7 @@ module Data.Tuple.Append.TemplateHaskell
     defineTupleAddUpto,
     defineTupleAppendUpto,
     defineSequenceTupleUpTo,
+    defineFoldTupleUpTo,
 
     -- * Quasiquoters for unboxed tuples
     defineUnboxedTupleAppendFunctionsUpto,
@@ -27,6 +28,8 @@ module Data.Tuple.Append.TemplateHaskell
     tupleAppendFor,
     sequenceTuple,
     sequenceTupleFor,
+    foldTuple,
+    foldTupleFor,
 
     -- * Function declarations
     boxedTupleAddLFun,
@@ -52,6 +55,9 @@ module Data.Tuple.Append.TemplateHaskell
     boxedAppendClause,
     sequenceClauseA,
     sequenceClauseA_,
+    foldlClause,
+    foldrClause,
+    foldMapClause,
 
     -- ** Unboxed tuples
     unboxedAddLClause,
@@ -62,7 +68,10 @@ where
 
 import Control.Monad ((<=<))
 import Data.Char (chr, ord)
-import Data.Tuple.Append.Class (SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)))
+#if !MIN_VERSION_base(4,11,0)
+import Data.Monoid ((<>))
+#endif
+import Data.Tuple.Append.Class (FoldTuple (foldMapTuple, foldlTuple, foldrTuple), SequenceTuple (sequenceTupleA, sequenceTupleA_), TupleAddL ((<++)), TupleAddR ((++>)), TupleAppend ((+++)))
 import Language.Haskell.TH.Lib (DecsQ)
 import Language.Haskell.TH.Quote (QuasiQuoter (QuasiQuoter))
 import Language.Haskell.TH.Syntax
@@ -79,11 +88,20 @@ import Language.Haskell.TH.Syntax
     tupleDataName,
   )
 
+_nameVV :: Name
+_nameVV = mkName "v"
+
+_varVV :: Type
+_varVV = VarT _nameVV
+
 _nameZZ :: Name
 _nameZZ = mkName "x"
 
 _varZZ :: Type
 _varZZ = VarT _nameZZ
+
+_expZZ :: Exp
+_expZZ = VarE _nameZZ
 
 _patZZ :: Pat
 _patZZ = VarP _nameZZ
@@ -91,8 +109,14 @@ _patZZ = VarP _nameZZ
 _nameFF :: Name
 _nameFF = mkName "f"
 
+_patFF :: Pat
+_patFF = VarP _nameFF
+
 _varFF :: Type
 _varFF = VarT _nameFF
+
+_expFF :: Exp
+_expFF = VarE _nameFF
 
 _varNames :: Char -> [Name]
 _varNames c = map (mkName . (c :) . map (chr . (0x2050 +) . ord) . show) [1 :: Int ..]
@@ -208,6 +232,21 @@ _addRClause fp fe n = _clause [_tupleP'' fp vars, _patZZ] (_tupleB' fe (vars ++>
   where
     vars = take n _vNames
 
+_foldlClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
+_foldlClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldl (\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) _expZZ (map VarE vars)))
+  where
+    vars = take n _vNames
+
+_foldrClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
+_foldrClause fp n = _clause [_patFF, _patZZ, _tupleP'' fp vars] (NormalB (foldr ((\x₁ x₂ -> _expFF `AppE` x₁ `AppE` x₂) . VarE) _expZZ vars))
+  where
+    vars = take n _vNames
+
+_foldMapClause :: ([Pat] -> Pat) -> Int -> Name -> Dec
+_foldMapClause fp n = _clause [_patFF, _tupleP'' fp vars] (NormalB (foldr1 (\x₁ x₂ -> VarE '(<>) `AppE` x₁ `AppE` x₂) (map (AppE _expFF . VarE) vars)))
+  where
+    vars = take n _vNames
+
 -- | Create a function declaration to append two boxed tuples together in a new boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
 boxedAppendClause ::
   -- | The number of items for the first boxed tuple parameter.
@@ -271,6 +310,36 @@ unboxedAddRClause ::
   -- | A function declaration that only contains the body of the function.
   Dec
 unboxedAddRClause = _addRClause UnboxedTupP UnboxedTupE
+
+-- | Create a function declaration to fold a boxed tuple left-to-right. This only contains a declaration for the /body/ of the function, not a type signature.
+foldlClause ::
+  -- | The number of items of the boxed tuple to fold.
+  Int ->
+  -- | The name of the function to define.
+  Name ->
+  -- | A function declaration that only contains the body of the function.
+  Dec
+foldlClause = _foldlClause (TildeP . TupP)
+
+-- | Create a function declaration to fold a boxed tuple right-to-left. This only contains a declaration for the /body/ of the function, not a type signature.
+foldrClause ::
+  -- | The number of items of the boxed tuple to fold.
+  Int ->
+  -- | The name of the function to define.
+  Name ->
+  -- | A function declaration that only contains the body of the function.
+  Dec
+foldrClause = _foldrClause (TildeP . TupP)
+
+-- | Create a function declaration to 'foldMap' a boxed tuple. This only contains a declaration for the /body/ of the function, not a type signature.
+foldMapClause ::
+  -- | The number of items of the boxed tuple to 'foldMap'.
+  Int ->
+  -- | The name of the function to define.
+  Name ->
+  -- | A function declaration that only contains the body of the function.
+  Dec
+foldMapClause = _foldMapClause (TildeP . TupP)
 
 _tupleB :: [Name] -> Body
 _tupleB = _tupleB' TupE
@@ -473,6 +542,9 @@ _simpleInstanceAddL = _simpleInstance ''TupleAddL '(<++)
 _simpleInstanceAddR :: Type -> Type -> Type -> (Name -> Dec) -> Dec
 _simpleInstanceAddR = _simpleInstance ''TupleAddR '(++>)
 
+_simpleInstanceFold :: Type -> Type -> [Dec] -> Dec
+_simpleInstanceFold 𝐯 vₖ = InstanceD Nothing [] (ConT ''FoldTuple `AppT` 𝐯 `AppT` vₖ)
+
 _simpleSequenceInstance :: Type -> Type -> [Dec] -> Dec
 _simpleSequenceInstance = _simpleInstance'' [ConT ''Prelude.Applicative `AppT` _varFF] ''SequenceTuple _varFF
 
@@ -504,11 +576,19 @@ tupleAppendFor l = [tupleAppend m n | m <- _tupleRange l, let n = l - m, _tupleC
 
 -- | Define a typeclass instance for the 'SequenceTuple' typeclass that will sequence over a tuple for the given length.
 sequenceTupleFor ::
-  -- | The given number /n/ that specifies the *arity* of the tuple for which to construct an instance. Will return an empty list of the number is invalid.
+  -- | The given number /n/ that specifies the *arity* of the tuple for which to construct an instance. Will return an empty list if the number is invalid.
   Int ->
   -- | A list of typeclass instances for the 'SequenceTuple' typeclass.
   [Dec]
 sequenceTupleFor n = [sequenceTuple n | _tupleCheck n]
+
+-- | Define a typeclass instance for the 'FoldTuple' typeclass that will fold over a tuple of given length.
+foldTupleFor ::
+  -- | The given number /n/ that specifies the *arity* of the tuple for which to construct an instance. Will return an empty list if the number is invalid.
+  Int ->
+  -- | A list of typeclass instances for the 'FoldTuple' typeclass.
+  [Dec]
+foldTupleFor n = [foldTuple n | _tupleCheck n]
 
 -- | Define a typeclass instance for 'TupleAddL' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left side.
 tupleAddL ::
@@ -525,6 +605,14 @@ tupleAddR ::
   -- | A type instance declaration for an instance of the 'TupleAddR' typeclass for an /n/-tuple.
   Dec
 tupleAddR n = _simpleInstanceAddR (_tupleVar' n _vNames) _varZZ (_tupleVar' (n + 1) (take n _vNames ++> _nameZZ)) (boxedAddRClause n)
+
+-- | Define a typeclass instance for 'FoldTuple' for a tuple with /n/ elements that is folded with an arbitrary "fold" function.
+foldTuple ::
+  -- | The given length /n/ of the tuples to fold.
+  Int ->
+  -- | A type instance declaration for an instance of the 'FoldTuple' typeclass for an /n/-tuple.
+  Dec
+foldTuple n = _simpleInstanceFold _varVV (_tupleVar' n (repeat _nameVV)) [foldlClause n 'foldlTuple, foldrClause n 'foldrTuple, foldMapClause n 'foldMapTuple]
 
 -- | Define typeclass instances for 'TupleAddL' and 'TupleAddR' for a tuple with /n/ elements and an item to construct a tuple with /n+1/ elements where the item is added at the left or the right side.
 tupleAdd ::
@@ -556,11 +644,17 @@ defineTupleAppendUpto ::
   QuasiQuoter
 defineTupleAppendUpto = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (tupleAppendFor <=< enumFromTo 0 . read))
 
--- | A 'QuasiQuoter' that constructs instances for the 'SequenceTuple' typeclass for tuples up to a length /n/ where /n/ i read as text input for the quasi quoter. For a single /n/ it will thus construct /n/ instances in total.
+-- | A 'QuasiQuoter' that constructs instances for the 'SequenceTuple' typeclass for tuples up to a length /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it will thus construct /n/ instances in total.
 defineSequenceTupleUpTo ::
   -- | A 'QuasiQuoter' that will construct typeclass instance declarations.
   QuasiQuoter
 defineSequenceTupleUpTo = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (sequenceTupleFor <=< enumFromTo 1 . read))
+
+-- | A 'QuasiQuoter' that constructs instances for the 'FoldTuple' typeclass for tuples up to a length /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it will thus construct /n+1/ instances in total.
+defineFoldTupleUpTo ::
+  -- | A 'QuasiQuoter' that will construct typeclass instance declarations.
+  QuasiQuoter
+defineFoldTupleUpTo = QuasiQuoter _errorQuasiQuoter _errorQuasiQuoter _errorQuasiQuoter (pure . (foldTupleFor <=< enumFromTo 1 . read))
 
 -- | A 'QuasiQuoter' that constructs function declarations with the name @unboxedAppend_i_j@ with /i/ and /j/ the number of items of the unboxed tuples. The items sum up to at most /n/ where /n/ is read as text input for the quasi quoter. For a single /n/ it thus will construct /n+1/ instances for each tuple length.
 defineUnboxedTupleAppendFunctionsUpto ::
